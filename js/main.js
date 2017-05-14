@@ -21,7 +21,8 @@ var scene_depth_half = 500;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
                         scene_depth_half*scene_depth_half*4);
-var init_vel = 5;
+// var init_vel = 5;
+var init_vel = 2;
 var collision_i;
 
 // compatability check before starting
@@ -39,6 +40,7 @@ if (Detector.webgl) {
 // meshs
 function init_boids_birds(boids, birds, xwing) {
     for ( var i = 0; i < 100; i ++ ) {
+    // for ( var i = 0; i < 1; i ++ ) {
         boid = boids[ i ] = new Boid();
         boid.position.x = Math.random() * scene_width_half;
         boid.position.y = Math.random() * scene_height_half;
@@ -54,11 +56,15 @@ function init_boids_birds(boids, birds, xwing) {
                                         new THREE.MeshBasicMaterial( 
                                             { color:Math.random() * 0xff0000, 
                                                 side: THREE.DoubleSide } ) );
+            boid.type = 'xwing';
+            // boid.pursue = true;
         } else {
             bird = birds[ i ] = new THREE.Mesh( new Tie(), 
                                         new THREE.MeshBasicMaterial( 
                                             { color:Math.random() * 0xff0000, 
                                                 side: THREE.DoubleSide } ) );
+            boid.type = 'tie';
+            // boid.pursue = false;
         }
         bird.phase = Math.floor( Math.random() * 62.83 );
         scene.add( bird );
@@ -67,14 +73,26 @@ function init_boids_birds(boids, birds, xwing) {
 
 // Update the locations of the boids and corresponding birds (meshs) by calling
 // the run function for each of the boids
-function update_boids_birds(boids, birds) {
+function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
     for ( var i = 0, il = birds.length; i < il; i++ ) {
         boid = boids[ i ];
-        boid.run( boids );
+        boid.run( boids, enemy_boids, enemy_bullets);
         bird = birds[ i ];
         bird.position.copy( boids[ i ].position );
         color = bird.material.color;
         color.r = color.g = color.b = Math.max((camera.position.clone().sub(bird.position)).length() / diagonal, 0.2);
+
+        if (boid.pursue) {
+            color.r = 1;
+            color.g = 0;
+            color.b = 0;
+        }
+        else {
+            color.r = 0;
+            color.g = 1;
+            color.b = 0;
+        }
+
         //color.r = color.g = color.b = ( 500 - bird.position.z ) / 1000;
         bird.rotation.y = Math.atan2( - boid.velocity.z, boid.velocity.x );
         bird.rotation.z = Math.asin( boid.velocity.y / boid.velocity.length() );
@@ -98,6 +116,7 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
             scene.remove(birds[collision_i]);
             boids.splice(collision_i, 1);
             birds.splice(collision_i, 1);
+            console.log('count: ' + boids.length);
         }
         if (bullet.remove_this) {
             scene.remove(bullet_mesh);
@@ -264,8 +283,8 @@ function init() {
 
 
 function render() {
-    update_boids_birds(boids_xwing, birds_xwing);
-    update_boids_birds(boids_tie, birds_tie);
+    update_boids_birds(boids_xwing, birds_xwing, boids_tie, bullets_tie);
+    update_boids_birds(boids_tie, birds_tie, boids_xwing, bullets_xwing);
 
     update_bullets(bullets_xwing, bullet_meshs_xwing, boids_tie, birds_tie);
     update_bullets(bullets_tie, bullet_meshs_tie, boids_xwing, birds_xwing);
