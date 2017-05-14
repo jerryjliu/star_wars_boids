@@ -23,11 +23,12 @@ var Xwing = function () {
     f3( 4, 7, 6 ); // left top wing
     f3( 5, 6, 7 ); // right top wing
 
-    f3(0, 3, 1); // body bottom
+    f3(0, 1, 3); // body bottom
     f3(8, 7, 6); // left bot wing
     f3(9, 6, 7); // right top wing
 
     this.computeFaceNormals();
+    this.computeVertexNormals();
 
     function v( x, y, z ) {
 
