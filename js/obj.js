@@ -87,19 +87,19 @@ var Boid = function() {
 
         // update pursuit behavior
 
-        // this.curBehaviorTime = Math.floor(Date.now() / 1000);
-        // if (this.curBehaviorTime - this.beginBehaviorTime > this.behaviorLength) {
-        //     if (this.pursue) {
-        //         this.behaviorLength = (Math.random() * 10) + 4;
-        //         this.pursue = false;
-        //     }
-        //     else {
-        //         this.behaviorLength = (Math.random() * 10) + 4;
-        //         this.pursue = true;
-        //     }
-        //     this.beginBehaviorTime = this.curBehaviorTime;
+        this.curBehaviorTime = Math.floor(Date.now() / 1000);
+        if (this.curBehaviorTime - this.beginBehaviorTime > this.behaviorLength) {
+            if (this.pursue) {
+                this.behaviorLength = (Math.random() * 10) + 4;
+                this.pursue = false;
+            }
+            else {
+                this.behaviorLength = (Math.random() * 10) + 4;
+                this.pursue = true;
+            }
+            this.beginBehaviorTime = this.curBehaviorTime;
             
-        // }
+        }
         if (this.pursue) _acceleration.add(this.pursueEnemy(enemy_boids));
         else _acceleration.add(this.fleeEnemy(enemy_boids));
     };
