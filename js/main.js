@@ -59,14 +59,12 @@ function init_boids_birds(boids, birds, xwing) {
                                             { color:Math.random() * 0xff0000, 
                                                 side: THREE.DoubleSide } ) );
             boid.type = 'xwing';
-            boid.pursue = true;
         } else {
             bird = birds[ i ] = new THREE.Mesh( new Tie(), 
                                         new THREE.MeshBasicMaterial( 
                                             { color:Math.random() * 0xff0000, 
                                                 side: THREE.DoubleSide } ) );
             boid.type = 'tie';
-            boid.pursue = false;
         }
         bird.phase = Math.floor( Math.random() * 62.83 );
         scene.add( bird );
@@ -171,9 +169,9 @@ function update_explosions(explosions) {
             var mesh = explosion.meshes[j];
             var pos = explosion.positions[j];
             mesh.position.copy(pos);
-            mesh.scale.x *= 0.95;
-            mesh.scale.y *= 0.95;
-            mesh.scale.z *= 0.95;
+            mesh.scale.x *= 0.97;
+            mesh.scale.y *= 0.97;
+            mesh.scale.z *= 0.97;
         }
     }
 }
