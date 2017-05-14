@@ -87,19 +87,19 @@ var Boid = function() {
 
         // update pursuit behavior
 
-        this.curBehaviorTime = Math.floor(Date.now() / 1000);
-        if (this.curBehaviorTime - this.beginBehaviorTime > this.behaviorLength) {
-            if (this.pursue) {
-                this.behaviorLength = (Math.random() * 10) + 4;
-                this.pursue = false;
-            }
-            else {
-                this.behaviorLength = (Math.random() * 10) + 4;
-                this.pursue = true;
-            }
-            this.beginBehaviorTime = this.curBehaviorTime;
+        // this.curBehaviorTime = Math.floor(Date.now() / 1000);
+        // if (this.curBehaviorTime - this.beginBehaviorTime > this.behaviorLength) {
+        //     if (this.pursue) {
+        //         this.behaviorLength = (Math.random() * 10) + 4;
+        //         this.pursue = false;
+        //     }
+        //     else {
+        //         this.behaviorLength = (Math.random() * 10) + 4;
+        //         this.pursue = true;
+        //     }
+        //     this.beginBehaviorTime = this.curBehaviorTime;
             
-        }
+        // }
         if (this.pursue) _acceleration.add(this.pursueEnemy(enemy_boids));
         else _acceleration.add(this.fleeEnemy(enemy_boids));
     };
@@ -149,7 +149,6 @@ var Boid = function() {
             if (distDotVel <= 0) continue;
             var dsquared = distVec.dot(distVec) - (distDotVel * distDotVel);
             if (dsquared > (avoidRadius * avoidRadius)) continue;
-            console.log()
             // found that current velocity intersects radius, so avoid
             var scaledVVec = normVel.clone().multiplyScalar(distDotVel);
             var steerVec = scaledVVec.clone().sub(distVec);
@@ -179,16 +178,18 @@ var Boid = function() {
         }
         // weight pursuit force proportional to distance (so slows down as gets closer)
         var pursuit = new THREE.Vector3();
-        pursuit.add(minBoid.position);
-        pursuit.sub(this.position);
-        // console.log(pursuit);
-        // pursuit.divideScalar(Math.sqrt(this.position.distanceTo(minBoid.position)));
+        if (minBoid != null) {
+            pursuit.add(minBoid.position);
+            pursuit.sub(this.position);
+            // console.log(pursuit);
+            // pursuit.divideScalar(Math.sqrt(this.position.distanceTo(minBoid.position)));
 
-        pursuit.normalize();
-        pursuit.divideScalar(10);
-        if (this.position.clone().distanceTo(minBoid.position) < 100) {
-            // pursuit.divideScalar(this.position.distanceTo(minBoid.position));
-            pursuit.multiplyScalar(1 / 100).multiplyScalar(this.position.clone().distanceTo(minBoid.position));
+            pursuit.normalize();
+            pursuit.divideScalar(2);
+            if (this.position.clone().distanceTo(minBoid.position) < 50) {
+                // pursuit.divideScalar(this.position.distanceTo(minBoid.position));
+                pursuit.multiplyScalar(1 / 50).multiplyScalar(this.position.clone().distanceTo(minBoid.position));
+            }
         }
         
         // pursuit.divideScalar(1);
@@ -210,9 +211,8 @@ var Boid = function() {
             bflee.normalize();
             bflee.divideScalar(this.position.distanceTo(boid.position));
             flee.add(bflee);
-
-
         }
+        // flee.divideScalar(10);
         // console.log(flee);
         flee.multiplyScalar(10);
         return flee;
@@ -367,5 +367,135 @@ var Bullet = function(init_position, init_velocity, owner) {
             this.position.z =  _depth;
             return true;
         }
+    };
+}
+
+var Explosion = function(init_position, num_particles) {
+    var _width = 500, _height = 500, _depth = 200, _collision_distance = 5;
+    var _max_distance = 75;
+    var _distance_travelled = 0;
+    this.remove_this = false;
+
+    this.positions = new Array(num_particles);
+    this.velocities = new Array(num_particles);
+    this.meshes = new Array(num_particles);
+
+    // Taken from http://stackoverflow.com/questions/25582882/javascript-math-random-normal-distribution-gaussian-bell-curve
+    // returns a gaussian random function with the given mean and stdev.
+    function gaussian(mean, stdev) {
+        var y2;
+        var use_last = false;
+        return function() {
+            var y1;
+            if(use_last) {
+               y1 = y2;
+               use_last = false;
+            }
+            else {
+                var x1, x2, w;
+                do {
+                     x1 = 2.0 * Math.random() - 1.0;
+                     x2 = 2.0 * Math.random() - 1.0;
+                     w  = x1 * x1 + x2 * x2;               
+                } while( w >= 1.0);
+                w = Math.sqrt((-2.0 * Math.log(w))/w);
+                y1 = x1 * w;
+                y2 = x2 * w;
+                use_last = true;
+           }
+
+           var retval = mean + stdev * y1;
+           if(retval > 0) 
+               return retval;
+           return -retval;
+       }
+    }
+
+    // initialize velocities to random points on unit sphere
+    function initializeVelocities(velocities, scaleVal) {
+        standard = gaussian(0, 1);
+        for(var i = 0; i < velocities.length; i++) {
+            var velocity = new THREE.Vector3();
+            velocity.x = standard(); velocity.y = standard(); velocity.z = standard();
+            velocity.normalize();
+            velocity.multiplyScalar(scaleVal);
+            velocities[i] = velocity;
+        }
+        return velocities;
+    }
+
+    for(var i = 0; i < this.positions.length; i++) {
+        this.positions[i] = init_position.clone();
+        this.meshes[i] = null;
+    }
+    initializeVelocities(this.velocities, 3.0);
+
+    
+    var distance, boid;
+    var _distance_unit = 1;
+
+    this.setMesh = function( mesh ) {
+        for(var i = 0; i < this.meshes.length; i++) {
+            this.meshes[i] = mesh.clone();
+            this.meshes[i].position.copy(this.positions[i]);
+        }
+    }
+
+    this.setWorldSize = function ( width, height, depth ) {
+        _width = width;
+        _height = height;
+        _depth = depth;
+    };
+
+    this.move = function () {
+        for(var i = 0; i < this.positions.length; i++) {
+            this.positions[i].add(this.velocities[i]);
+            this.velocities[i].multiplyScalar(0.95);
+            // console.log('moving');
+            // console.log(this.positions[i]);
+        }
+        // this.position.add( this.velocity );
+        _distance_travelled += _distance_unit;  
+    };
+
+    this.run = function() {
+        if (_distance_travelled > _max_distance || this.checkBounds()) {
+            this.remove_this = true;
+            return undefined;
+        }
+        else {
+            this.move();
+        }
+    };
+
+    this.checkBounds = function () {
+        for(var i = 0; i < this.positions.length; i++) {
+            var position = this.positions[i];
+            if ( position.x >   _width ) {
+                position.x = - _width;
+                return true;
+            }
+            if ( position.x < - _width ) {
+                position.x =   _width;
+                return true;
+            }
+            if ( position.y >   _height ) {
+                position.y = - _height;
+                return true;
+            }
+            if ( position.y < - _height ) {
+                position.y =  _height;
+                return true;
+            }
+            if ( position.z >  _depth ) {
+                position.z = - _depth;
+                return true;
+            }
+            if ( position.z < - _depth ) {
+                position.z =  _depth;
+                return true;
+            }
+            }
+        
     };
 }
