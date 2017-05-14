@@ -23,8 +23,8 @@ var scene_depth_half = 500;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
                         scene_depth_half*scene_depth_half*4);
-// var init_vel = 5;
-var init_vel = 0.2;
+var init_vel = 5;
+//var init_vel = 0.2;
 var collision_i;
 
 // compatability check before starting
