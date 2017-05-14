@@ -18,7 +18,10 @@ var bullets_tie, bullet_meshs_tie;
 var scene_width_half = 400;
 var scene_height_half = 200;
 var scene_depth_half = 500;
-var init_vel = 4;
+var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
+                        scene_height_half*scene_height_half*4 + 
+                        scene_depth_half*scene_depth_half*4);
+var init_vel = 5;
 var collision_i;
 
 // compatability check before starting
@@ -35,7 +38,7 @@ if (Detector.webgl) {
 // parameter for whether to use Xwing (true) or Tie (false) constructors for the 
 // meshs
 function init_boids_birds(boids, birds, xwing) {
-    for ( var i = 0; i < 40; i ++ ) {
+    for ( var i = 0; i < 100; i ++ ) {
         boid = boids[ i ] = new Boid();
         boid.position.x = Math.random() * scene_width_half;
         boid.position.y = Math.random() * scene_height_half;
@@ -71,7 +74,8 @@ function update_boids_birds(boids, birds) {
         bird = birds[ i ];
         bird.position.copy( boids[ i ].position );
         color = bird.material.color;
-        color.r = color.g = color.b = ( 500 - bird.position.z ) / 1000;
+        color.r = color.g = color.b = Math.max((camera.position.clone().sub(bird.position)).length() / diagonal, 0.2);
+        //color.r = color.g = color.b = ( 500 - bird.position.z ) / 1000;
         bird.rotation.y = Math.atan2( - boid.velocity.z, boid.velocity.x );
         bird.rotation.z = Math.asin( boid.velocity.y / boid.velocity.length() );
         bird.phase = ( bird.phase + ( Math.max( 0, bird.rotation.z ) + 0.1 )  ) % 62.83;
