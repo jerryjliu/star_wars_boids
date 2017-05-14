@@ -22,7 +22,7 @@ var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 +
                         scene_height_half*scene_height_half*4 + 
                         scene_depth_half*scene_depth_half*4);
 // var init_vel = 5;
-var init_vel = 2;
+var init_vel = 0.2;
 var collision_i;
 
 // compatability check before starting
@@ -39,7 +39,7 @@ if (Detector.webgl) {
 // parameter for whether to use Xwing (true) or Tie (false) constructors for the 
 // meshs
 function init_boids_birds(boids, birds, xwing) {
-    for ( var i = 0; i < 100; i ++ ) {
+    for ( var i = 0; i < 20; i ++ ) {
     // for ( var i = 0; i < 1; i ++ ) {
         boid = boids[ i ] = new Boid();
         boid.position.x = Math.random() * scene_width_half;
@@ -241,7 +241,7 @@ function add_boundaries(scene) {
 
 }
 
-
+var raycaster, mouse;
 // ------------ Main Initializer and Renderer Loop -----------------
 function init() {
     scene = new THREE.Scene();
@@ -279,6 +279,10 @@ function init() {
     window.addEventListener('resize', onWindowResize, false );
     window.addEventListener('click', onLeftClick, true); 
     window.addEventListener('contextmenu', onRightClick, false);
+
+    // For selecting units
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
 }
 
 
@@ -308,17 +312,44 @@ function onWindowResize() {
     renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
-function onLeftClick() {
-    for (var i = 0, il = boids_xwing.length; i < il; i++) {
-        bullet = boids_xwing[i].fireBullet();
-        if (bullet !== undefined) {
-            bullets_xwing.push(bullet);
-            var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-            var material = new THREE.MeshBasicMaterial( { color: 0xff4500 } );
-            bullet_mesh = new THREE.Mesh( geometry, material );
-            bullet_mesh.position.copy(bullet.position);
-            scene.add( bullet_mesh );
-            bullet_meshs_xwing.push(bullet_mesh)
+function onLeftClick(e) {
+    if (e.shiftKey) {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+        // update the picking ray with the camera and mouse position
+        raycaster.setFromCamera( mouse, camera );
+
+        // calculate objects intersecting the picking ray
+        //console.log(scene.children);
+        var intersects = raycaster.intersectObjects( birds_xwing );
+        console.log(intersects.length);
+        for ( var i = 0; i < intersects.length; i++ ) {
+            console.log(intersects[i]);
+            intersects[ i ].object.material.color.set( 0xffffff );
+
+        }
+        var intersects = raycaster.intersectObjects( birds_tie );
+        console.log(intersects.length);
+        for ( var i = 0; i < intersects.length; i++ ) {
+            console.log(intersects[i]);
+            intersects[ i ].object.material.color.set( 0xffffff );
+
+        }
+        
+    }
+    else {
+        for (var i = 0, il = boids_xwing.length; i < il; i++) {
+            bullet = boids_xwing[i].fireBullet();
+            if (bullet !== undefined) {
+                bullets_xwing.push(bullet);
+                var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+                var material = new THREE.MeshBasicMaterial( { color: 0xff4500 } );
+                bullet_mesh = new THREE.Mesh( geometry, material );
+                bullet_mesh.position.copy(bullet.position);
+                scene.add( bullet_mesh );
+                bullet_meshs_xwing.push(bullet_mesh)
+            }
         }
     }
 }
