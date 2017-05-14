@@ -15,6 +15,8 @@ var bullet, bullet_mesh;
 var bullets_xwing, bullet_meshs_xwing;
 var bullets_tie, bullet_meshs_tie;
 
+var explosions;
+
 var scene_width_half = 400;
 var scene_height_half = 200;
 var scene_depth_half = 500;
@@ -57,14 +59,14 @@ function init_boids_birds(boids, birds, xwing) {
                                             { color:Math.random() * 0xff0000, 
                                                 side: THREE.DoubleSide } ) );
             boid.type = 'xwing';
-            // boid.pursue = true;
+            boid.pursue = true;
         } else {
             bird = birds[ i ] = new THREE.Mesh( new Tie(), 
                                         new THREE.MeshBasicMaterial( 
                                             { color:Math.random() * 0xff0000, 
                                                 side: THREE.DoubleSide } ) );
             boid.type = 'tie';
-            // boid.pursue = false;
+            boid.pursue = false;
         }
         bird.phase = Math.floor( Math.random() * 62.83 );
         scene.add( bird );
@@ -112,11 +114,15 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
         bullet_mesh = bullet_meshs[i];
         collision_i = bullet.run(boids);
         if (collision_i !== undefined) {
+            var collide_pos = bullet.position;
             // TODO: do something here for an explosion when there is a collision
             scene.remove(birds[collision_i]);
             boids.splice(collision_i, 1);
             birds.splice(collision_i, 1);
             console.log('count: ' + boids.length);
+
+            var explosion = create_explosion(collide_pos);
+            explosions.push(explosion);
         }
         if (bullet.remove_this) {
             scene.remove(bullet_mesh);
@@ -127,6 +133,47 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
         }
         else {
             bullet_mesh.position.copy(bullet.position);
+        }
+    }
+}
+
+// create explosion
+function create_explosion(init_pos) {
+    var numparticles = 75;
+    var explosion = new Explosion(init_pos, numparticles);
+    var geometry = new THREE.BoxGeometry( 2, 2, 2 );
+    var material = new THREE.MeshBasicMaterial( { color: 0xffa500 } );
+    particle_mesh = new THREE.Mesh( geometry, material );
+    explosion.setMesh(particle_mesh);
+    for(var i = 0; i < explosion.meshes.length; i++) {
+        scene.add(explosion.meshes[i]);
+
+    }
+    return explosion;
+}
+
+
+// Update the location particles by calling the run function for each explosion boid.
+// Each explosion boid consists of multiple explosion particles, each of which must be updated.
+function update_explosions(explosions) {
+    for (var i = 0, il = explosions.length; i < il; i++) {
+        var explosion = explosions[i];
+        explosion.run();
+        if (explosion.remove_this) {
+            for(var j = 0; j < explosion.meshes.length; j++) {
+                scene.remove(explosion.meshes[j]);
+            }
+            explosions.splice(i, 1);
+            i--; il--;
+            continue;
+        }
+        for(var j = 0; j < explosion.meshes.length; j++) {
+            var mesh = explosion.meshes[j];
+            var pos = explosion.positions[j];
+            mesh.position.copy(pos);
+            mesh.scale.x *= 0.95;
+            mesh.scale.y *= 0.95;
+            mesh.scale.z *= 0.95;
         }
     }
 }
@@ -260,6 +307,8 @@ function init() {
     bullets_tie = [];
     bullet_meshs_tie = [];
 
+    explosions = [];
+
     init_boids_birds(boids_xwing, birds_xwing, true);
     init_boids_birds(boids_tie, birds_tie, false);
 
@@ -292,6 +341,8 @@ function render() {
 
     update_bullets(bullets_xwing, bullet_meshs_xwing, boids_tie, birds_tie);
     update_bullets(bullets_tie, bullet_meshs_tie, boids_xwing, birds_xwing);
+
+    update_explosions(explosions);
 
     renderer.render( scene, camera );
 }
