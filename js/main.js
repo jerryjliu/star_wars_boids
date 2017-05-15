@@ -162,6 +162,10 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
                     document.getElementById('tiecount').innerHTML = "" + (boids.length - 1);
                 }
                 scene.remove(birds[collision_i]);
+                if (boids[collision_i] == selectBoid) {
+                    selectBoid = undefined;
+                    scene.remove( selectSphereMesh );
+                }
                 boids.splice(collision_i, 1);
                 birds.splice(collision_i, 1);
                 console.log('count: ' + boids.length);
