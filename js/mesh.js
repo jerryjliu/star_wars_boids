@@ -137,7 +137,7 @@ var StarDestroyer = function () {
     f3(0, 1, 2); // top right
     f3(1, 0, 3); // top left
     f3(0, 2, 5); // bottom right
-    f3(0, 3, 5); // bottom left
+    f3(0, 5, 3); // bottom left
 
     f3(1, 2, 4); // back top right
     f3(4, 2, 5); // back bot right

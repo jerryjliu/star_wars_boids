@@ -18,6 +18,12 @@ var Boid = function() {
 
     var bullet;
 
+    var _avoid_sd_boid = false;
+    var _triangle;
+    var _plane = new THREE.Plane();
+    var _distance;
+    var scaling = 0.0001;
+
     this.fireBullet = function () {
         if (!this.fired) {
             bullet = new Bullet(this.position.clone(), this.velocity.clone(), this);
@@ -42,7 +48,11 @@ var Boid = function() {
         else {
             return undefined;
         }
-    }
+    };
+
+    this.setAvoidStarDestroyer = function(value) {
+        _avoid_sd_boid = value;
+    };
 
     this.setGoal = function ( target ) {
         _goal = target;
@@ -58,7 +68,28 @@ var Boid = function() {
     this.setMaxSpeed = function ( maxSpeed ) {
         _maxSpeed = maxSpeed;
     };
-    this.run = function ( boids, enemy_boids, enemy_bullets ) {
+    this.avoidStarDestroyer = function (sd_boid) {
+        _distance = sd_boid.bounding_box.distanceToPoint(this.position);
+        // console.log(_distance);
+        if (_distance > sd_boid.effective_distance)
+            return;
+        for (var i = 0, il = sd_boid.triangles.length; i < il; i++) {
+            sd_boid.triangles[i].plane(_plane);
+            _distance = _plane.normal.dot(this.position) + _plane.constant;
+            if (_distance > 0) {
+                //vector.copy(this.velocity).reflect(_plane.normal);
+                vector.copy(_plane.normal);
+                vector.multiplyScalar(scaling*sd_boid.triangles[i].area()/_distance);
+                // console.log(_distance);
+                // console.log(vector);
+                _acceleration.add(vector);
+            }
+        }
+    };
+    this.run = function ( boids, enemy_boids, enemy_bullets, sd_boid = undefined) {
+        if (_avoid_sd_boid && sd_boid !== undefined) {
+            this.avoidStarDestroyer(sd_boid);
+        }
         if ( _avoidWalls ) {
             vector.set( - _width, this.position.y, this.position.z );
             vector = this.avoid( vector );
@@ -534,4 +565,46 @@ var Explosion = function(init_position, num_particles, init_vel) {
             }
         
     };
+}
+
+var StarDestroyerBoid = function () {
+    this.bounding_box = new THREE.Box3();
+    this.triangles = [];
+    this.effective_distance = 100;
+
+    // var plane_;
+    var _face;
+    // var face_normal_ =  new THREE.Vector3();
+    var _triangle;
+    var _point = new THREE.Vector3();
+
+    this.updateGeoWithMesh = function(obj) {
+        this.bounding_box.copy(obj.geometry.boundingBox).applyMatrix4(obj.matrixWorld);
+        for (var i = 0, il = obj.geometry.faces.length; i < il; i++) {
+            _face = obj.geometry.faces[i];
+            
+            if (this.triangles[i] === undefined) {
+                this.triangles[i] = new THREE.Triangle();
+            }
+            _triangle = this.triangles[i];
+            _triangle.a = obj.geometry.vertices[_face.a].clone().applyMatrix4(obj.matrixWorld);
+            _triangle.b = obj.geometry.vertices[_face.b].clone().applyMatrix4(obj.matrixWorld);
+            _triangle.c = obj.geometry.vertices[_face.c].clone().applyMatrix4(obj.matrixWorld);
+            console.log(_triangle.normal());
+            console.log(_triangle.plane());
+            //console.log(_face.normal.clone().applyMatrix4(obj.matrixWorld));
+
+
+            // point_.copy(obj.geometry.vertices[face_.a]).applyMatrix4(obj.matrixWorld);
+            // face_normal_.copy(face_.normal).applyMatrix4(obj.matrixWorld);
+            // if (this.planes[i] === undefined) {
+            //     this.planes[i] = new THREE.Plane();
+            // }
+            // plane_ = this.planes[i];
+            // plane_.normal.copy(face_normal_).normalize();
+            // point_.copy(obj.geometry.vertices[face_.a]).applyMatrix4(obj.matrixWorld);
+            // console.log(point_);
+            // plane_.w = -(point_.dot(plane_.normal));
+        }
+    }
 }

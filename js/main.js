@@ -43,6 +43,10 @@ var firstPersonControls;
 var inFirstPerson = false;
 var raycaster, mouse;
 
+// Star Destroyer
+var sd;
+var sd_boid;
+
 // compatability check before starting
 if (Detector.webgl) {
     init();
@@ -76,6 +80,7 @@ function init_boids_birds(boids, birds, xwing) {
         boid.setAvoidWalls( true );
         boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
         boid.setMaxSpeed(init_vel);
+        boid.setAvoidStarDestroyer( true );
         if (xwing) {
             // var material = new THREE.MeshBasicMaterial( 
             //                                 { color:Math.random() * 0xff0000, 
@@ -117,19 +122,17 @@ function init_star_destroyer() {
     //     scene.add(obj);
     // });
     var material = new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } );
-    var sd = new THREE.Mesh( new StarDestroyer(), material)
-    sd.position.set(10, 20, 50);
+    sd = new THREE.Mesh( new StarDestroyer(), material)
+    // sd.position.set(10, 20, 50);
     // sd.rotation.x = Math.PI/2;
     // sd.rotation.y = Math.atan2( - 10, 10 );
     // sd.rotation.z = Math.asin( 10 / Math.sqrt(300) );
-    // sd.geometry.updateGeo();
+    sd.geometry.updateGeo();
     scene.add( sd );
+
+    sd_boid = new StarDestroyerBoid();
+    sd_boid.updateGeoWithMesh(sd);
     console.log(sd);
-    scene.updateMatrixWorld();
-    console.log(sd.geometry.boundingBox.max);
-    console.log(sd.geometry.boundingBox.max.clone().setFromMatrixPosition(sd.matrix));
-    console.log(sd.geometry.boundingBox.min.clone());
-    console.log(sd.geometry.boundingBox.min.clone().setFromMatrixPosition(sd.matrixWorld));
 }
 
 // Update the locations of the boids and corresponding birds (meshs) by calling
@@ -141,7 +144,7 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
             boid.forcedMove(firstPersonControls.getDirection());
         }
         else
-            boid.run( boids, enemy_boids, enemy_bullets);
+            boid.run( boids, enemy_boids, enemy_bullets, sd_boid);
         bird = birds[ i ];
         bird.position.copy( boids[ i ].position );
         color = bird.material.color;
@@ -563,6 +566,16 @@ function onKeyDown( event ) {
             }
             break;
         case 32: // " " -- fire first person ship
+            sd.updateMatrixWorld( true );
+            // scene.updateMatrixWorld( true );
+            // console.log(sd.matrixWorld);
+            // console.log(sd.geometry.boundingBox.max);
+            // console.log(sd.geometry.boundingBox.max.clone().applyMatrix4(sd.matrixWorld));
+            // console.log(sd.geometry.boundingBox.min);
+            // console.log(sd.geometry.boundingBox.min.clone().applyMatrix4(sd.matrixWorld));
+            sd_boid.updateGeoWithMesh(sd);
+            //console.log(new THREE.Vector3(0, 0, 0).setFromMatrixPosition(sd.matrixWorld));
+            //console.log(new THREE.Vector3(1, 0, 0).setFromMatrixPosition(sd.matrixWorld));
             if (inFirstPerson)
                 init_bullet_obj(selectBoid, 
                                 bullets_xwing, 
