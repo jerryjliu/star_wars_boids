@@ -10,7 +10,7 @@ var bird, boid;
 var birds_xwing, boids_xwing;
 var birds_tie, boids_tie;
 
-var init_count = 2;
+var init_count = 20;
 
 var bullet, bullet_mesh;
 var bullets_xwing, bullet_meshs_xwing;
@@ -71,7 +71,7 @@ function init_boids_birds(boids, birds, xwing) {
         boid.velocity.z = Math.random() * init_vel - init_vel/2.;
         if (xwing) {
             boid.position.x = Math.random() * scene_width_half/4 + 3/5*scene_width_half;
-            console.log(boid.position.z);
+            console.log(boid.position.x);
         } else {
             boid.position.x = -(Math.random() * scene_width_half/4 + 3/5*scene_width_half);
             boid.velocity.x = Math.random() * init_vel;
@@ -123,7 +123,7 @@ function init_star_destroyer() {
     // });
     var material = new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } );
     sd = new THREE.Mesh( new StarDestroyer(), material)
-    // sd.position.set(10, 20, 50);
+    sd.position.set(10, 20, 50);
     // sd.rotation.x = Math.PI/2;
     // sd.rotation.y = Math.atan2( - 10, 10 );
     // sd.rotation.z = Math.asin( 10 / Math.sqrt(300) );
@@ -145,6 +145,22 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
         }
         else
             boid.run( boids, enemy_boids, enemy_bullets, sd_boid);
+
+        if (boid.collided) {
+            var collide_pos = boid.position.clone();
+            var collide_vel = boid.velocity.clone().multiplyScalar(-1);
+            scene.remove(birds[i]);
+            boids.splice(i, 1);
+            birds.splice(i, 1);
+            console.log('count: ' + boids.length);
+            var explosion = create_explosion(collide_pos, collide_vel);
+            explosions.push(explosion);
+            i--;
+            il--;
+            // alert('asd');
+            continue;
+        }
+
         bird = birds[ i ];
         bird.position.copy( boids[ i ].position );
         color = bird.material.color;
@@ -188,12 +204,12 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
         bullet_mesh = bullet_meshs[i];
         collision_i = bullet.run(boids);
         if (collision_i !== undefined) {
-            var collide_pos = bullet.position.clone();
-            var collide_vel = bullet.velocity.clone();
             // TODO: do something here for an explosion when there is a collision
             boids[collision_i].hp -= 1;
             // boid is killed, update necessary data structures
             if (boids[collision_i].hp == 0) {
+                var collide_pos = bullet.position.clone();
+                var collide_vel = bullet.velocity.clone();
                 if (boids[collision_i].type == 'xwing') {
                     document.getElementById('xwingcount').innerHTML = "" + (boids.length - 1);
                 } else if (boids[collision_i].type == 'tie') {

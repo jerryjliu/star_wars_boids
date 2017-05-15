@@ -13,6 +13,8 @@ var Boid = function() {
     this.beginBehaviorTime = Math.floor(Date.now() / 1000);
     this.curBehaviorTime = this.beginBehaviorTime;
     this.behaviorLength = (Math.random() * 10) + 4;
+
+    this.collided = false;
     var _lastFireTime = 0;
     var _time_between_fires = 200; // in ms
 
@@ -22,7 +24,10 @@ var Boid = function() {
     var _triangle;
     var _plane = new THREE.Plane();
     var _distance;
-    var scaling = 0.0001;
+    var scaling = 10;
+    var _normal = new THREE.Vector3();
+
+    var _collision_radius = 3;
 
     this.fireBullet = function () {
         if (!this.fired) {
@@ -73,23 +78,37 @@ var Boid = function() {
         // console.log(_distance);
         if (_distance > sd_boid.effective_distance)
             return;
+        vector.set(0, 0, 0);
+        var min_dist = Infinity;
+        var tmp = new THREE.Vector3();
+        var outside = false;
         for (var i = 0, il = sd_boid.triangles.length; i < il; i++) {
             sd_boid.triangles[i].plane(_plane);
             _distance = _plane.normal.dot(this.position) + _plane.constant;
             if (_distance > 0) {
-                //vector.copy(this.velocity).reflect(_plane.normal);
-                vector.copy(_plane.normal);
-                vector.multiplyScalar(scaling*sd_boid.triangles[i].area()/_distance);
-                // console.log(_distance);
-                // console.log(vector);
-                _acceleration.add(vector);
+                // check their direction
+                var _dot = _plane.normal.dot(this.velocity);
+                if (_dot < 0) {
+                    vector.add(_normal.copy(_plane.normal).divideScalar(_distance).multiplyScalar(-_dot));
+                    if (_distance < min_dist) {
+                        min_dist = _distance;
+                    }
+                }
+                outside = true;
             }
+        }
+        if (!outside) {
+            console.log('Collision with SD!');
+            this.collided = true;
+            // alert('asd');
+        }
+        if (!this.collided && vector.length() > 0 && min_dist !== Infinity) {
+            tmp.copy(this.velocity).reflect(vector.normalize());
+            tmp.multiplyScalar(scaling/(min_dist));
+            _acceleration.add(vector);
         }
     };
     this.run = function ( boids, enemy_boids, enemy_bullets, sd_boid = undefined) {
-        if (_avoid_sd_boid && sd_boid !== undefined) {
-            this.avoidStarDestroyer(sd_boid);
-        }
         if ( _avoidWalls ) {
             vector.set( - _width, this.position.y, this.position.z );
             vector = this.avoid( vector );
@@ -122,7 +141,13 @@ var Boid = function() {
         if ( Math.random() > 0.5 ) {
             this.flock( boids, enemy_boids, enemy_bullets);
         }
+
+        if (_avoid_sd_boid && sd_boid !== undefined) {
+            this.avoidStarDestroyer(sd_boid);
+        }
+
         this.move();
+
     };
     this.flock = function ( boids, enemy_boids, enemy_bullets ) {
         if ( _goal ) {
@@ -201,6 +226,12 @@ var Boid = function() {
             // bsteer.sub(boid.position);
             // bsteer.multiplyScalar(1 / this.position.distanceToSquared(boid.position));
             var distVec = boid.position.clone().sub(this.position);
+            if (distVec.length() < _collision_radius) {
+                this.collided = true;
+                boid.collided = true;
+                console.log('boid collision');
+                return steer;
+            }
             var normVel = this.velocity.clone().normalize();
             var distDotVel = distVec.dot(normVel);
             if (distDotVel <= 0) continue;
@@ -570,7 +601,7 @@ var Explosion = function(init_position, num_particles, init_vel) {
 var StarDestroyerBoid = function () {
     this.bounding_box = new THREE.Box3();
     this.triangles = [];
-    this.effective_distance = 100;
+    this.effective_distance = 50;
 
     // var plane_;
     var _face;

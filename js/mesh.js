@@ -131,7 +131,7 @@ var StarDestroyer = function () {
     v(-half_depth, half_height, 0); // 1 - back top of destroyer
     v(-half_depth, 0, half_width); // 2 - back right of destroyer
     v(-half_depth, 0, -half_width); // 3 - back left of destroyer
-    v(-half_depth, 0, 0); // 4 - back center of destroyer
+    v(-half_depth - 0.25*half_depth, 0, 0); // 4 - back center of destroyer
     v(-half_depth, -half_height, 0); // 5 - back bottom of destroyer
 
     f3(0, 1, 2); // top right
@@ -139,10 +139,10 @@ var StarDestroyer = function () {
     f3(0, 2, 5); // bottom right
     f3(0, 5, 3); // bottom left
 
-    f3(1, 2, 4); // back top right
-    f3(4, 2, 5); // back bot right
-    f3(3, 1, 4); // back top left
-    f3(3, 4, 5); // back bot left
+    f3(2, 1, 4); // back top right
+    f3(4, 5, 2); // back bot right
+    f3(1, 3, 4); // back top left
+    f3(4, 3, 5); // back bot left
 
 
     function v( x, y, z ) {
