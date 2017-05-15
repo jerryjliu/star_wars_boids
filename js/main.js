@@ -28,9 +28,8 @@ var scene_depth_half = 500;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
                         scene_depth_half*scene_depth_half*4);
-// var init_vel = 5;
+
 var init_vel = 3;
-//var init_vel = 0.2;
 var collision_i;
 
 var isShiftDown;
@@ -71,7 +70,6 @@ function init_boids_birds(boids, birds, xwing) {
         boid.velocity.z = Math.random() * init_vel - init_vel/2.;
         if (xwing) {
             boid.position.x = Math.random() * scene_width_half/4 + 3/5*scene_width_half;
-            console.log(boid.position.x);
         } else {
             boid.position.x = -(Math.random() * scene_width_half/4 + 3/5*scene_width_half);
             boid.velocity.x = Math.random() * init_vel;
@@ -102,7 +100,6 @@ function init_boids_birds(boids, birds, xwing) {
 
             bird = birds[ i ] = new THREE.Mesh( new Tie(), material);
             boid.type = 'tie';
-            // console.log(bird.geometry.faceVertexUvs);
         }
         bird.scale.set(2,2,2);
         bird.phase = Math.floor( Math.random() * 62.83 );
@@ -121,18 +118,31 @@ function init_star_destroyer() {
     //     });
     //     scene.add(obj);
     // });
-    var material = new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } );
+    var material = new THREE.MeshBasicMaterial( { color: 0xffffff, 
+                                                    side: THREE.DoubleSide } );
+    material.map  = THREE.ImageUtils.loadTexture('../images/tie.jpg');
     sd = new THREE.Mesh( new StarDestroyer(), material)
-    sd.position.set(10, 20, 50);
+    // sd.position.set(10, 20, 50);
     // sd.rotation.x = Math.PI/2;
     // sd.rotation.y = Math.atan2( - 10, 10 );
     // sd.rotation.z = Math.asin( 10 / Math.sqrt(300) );
-    sd.geometry.updateGeo();
+    // sd.geometry.updateGeo();
     scene.add( sd );
-
     sd_boid = new StarDestroyerBoid();
+    sd_boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
+    sd_boid.position.set(0, 0, 0);
+    sd_boid.velocity.set(Math.random(), Math.random(), Math.random());
     sd_boid.updateGeoWithMesh(sd);
-    console.log(sd);
+    // console.log(sd);
+}
+
+function update_boid_mesh(boid, mesh) {
+    boid.run();
+    mesh.rotation.y = Math.atan2( - boid.velocity.z, boid.velocity.x );
+    mesh.rotation.z = Math.asin( boid.velocity.y / boid.velocity.length() );
+    mesh.position.copy(boid.position);
+    color = mesh.material.color;
+    color.r = color.g = color.b = Math.max((camera.position.clone().sub(mesh.position)).length() / diagonal, 0.35);
 }
 
 // Update the locations of the boids and corresponding birds (meshs) by calling
@@ -148,7 +158,7 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
 
         if (boid.collided) {
             var collide_pos = boid.position.clone();
-            var collide_vel = boid.velocity.clone().multiplyScalar(-1);
+            var collide_vel = boid.velocity.clone().normalize().multiplyScalar(-1);
             scene.remove(birds[i]);
             boids.splice(i, 1);
             birds.splice(i, 1);
@@ -157,7 +167,6 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
             explosions.push(explosion);
             i--;
             il--;
-            // alert('asd');
             continue;
         }
 
@@ -180,7 +189,7 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
         //color.r = color.g = color.b = ( 500 - bird.position.z ) / 1000;
         bird.rotation.y = Math.atan2( - boid.velocity.z, boid.velocity.x );
         bird.rotation.z = Math.asin( boid.velocity.y / boid.velocity.length() );
-        bird.phase = ( bird.phase + ( Math.max( 0, bird.rotation.z ) + 0.1 )  ) % 62.83;
+        // bird.phase = ( bird.phase + ( Math.max( 0, bird.rotation.z ) + 0.1 )  ) % 62.83;
         // bird.geometry.vertices[ 5 ].y = bird.geometry.vertices[ 4 ].y = Math.sin( bird.phase ) * 5;
 
         if (boid.pursue && !boid.fired && boid != selectBoid) {
@@ -439,7 +448,6 @@ function init() {
     firstPersonControls.enabled = false;
     scene.add( firstPersonControls.getObject() );
     var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
-    console.log('have', havePointerLock);
 }
 
 function initText() {
@@ -484,6 +492,11 @@ function initText() {
 
 function render() {
     var current_camera = camera;
+
+    // First update star destroyer, so geometry is consistent
+    update_boid_mesh(sd_boid, sd);
+    sd_boid.updateGeoWithMesh(sd);
+
     update_boids_birds(boids_xwing, birds_xwing, boids_tie, bullets_tie);
     update_boids_birds(boids_tie, birds_tie, boids_xwing, bullets_xwing);
 
@@ -582,16 +595,6 @@ function onKeyDown( event ) {
             }
             break;
         case 32: // " " -- fire first person ship
-            sd.updateMatrixWorld( true );
-            // scene.updateMatrixWorld( true );
-            // console.log(sd.matrixWorld);
-            // console.log(sd.geometry.boundingBox.max);
-            // console.log(sd.geometry.boundingBox.max.clone().applyMatrix4(sd.matrixWorld));
-            // console.log(sd.geometry.boundingBox.min);
-            // console.log(sd.geometry.boundingBox.min.clone().applyMatrix4(sd.matrixWorld));
-            sd_boid.updateGeoWithMesh(sd);
-            //console.log(new THREE.Vector3(0, 0, 0).setFromMatrixPosition(sd.matrixWorld));
-            //console.log(new THREE.Vector3(1, 0, 0).setFromMatrixPosition(sd.matrixWorld));
             if (inFirstPerson)
                 init_bullet_obj(selectBoid, 
                                 bullets_xwing, 

@@ -24,8 +24,13 @@ var Boid = function() {
     var _triangle;
     var _plane = new THREE.Plane();
     var _distance;
-    var scaling = 10;
+    var avoid_sd_scaling = 10;
     var _normal = new THREE.Vector3();
+
+    var radians, cos_radians, sin_radians, max_turn_angle = 120;
+    radians = max_turn_angle*Math.PI/180;
+    cos_radians = Math.cos(radians);
+    sin_radians = Math.sin(radians);
 
     var _collision_radius = 3;
 
@@ -89,7 +94,7 @@ var Boid = function() {
                 // check their direction
                 var _dot = _plane.normal.dot(this.velocity);
                 if (_dot < 0) {
-                    vector.add(_normal.copy(_plane.normal).divideScalar(_distance).multiplyScalar(-_dot));
+                    vector.add(_normal.copy(_plane.normal).divideScalar(_distance*_distance).multiplyScalar(-_dot));
                     if (_distance < min_dist) {
                         min_dist = _distance;
                     }
@@ -104,8 +109,8 @@ var Boid = function() {
         }
         if (!this.collided && vector.length() > 0 && min_dist !== Infinity) {
             tmp.copy(this.velocity).reflect(vector.normalize());
-            tmp.multiplyScalar(scaling/(min_dist));
-            _acceleration.add(vector);
+            tmp.multiplyScalar(avoid_sd_scaling/min_dist);
+            _acceleration.add(tmp);
         }
     };
     this.run = function ( boids, enemy_boids, enemy_bullets, sd_boid = undefined) {
@@ -186,16 +191,53 @@ var Boid = function() {
         this.position.add( this.velocity );
         _acceleration.set( 0, 0, 0 );
     }
-    this.move = function () {
 
+    // Rodrigues rotation formula
+    // k is unit vector for axis of rotation
+    // v is vector to be rotate
+    var rotate = function(v, k) {
+        var vnew = v.clone().multiplyScalar(cos_radians);
+        vnew.add(v.cross(k).multiplyScalar(sin_radians));
+        vnew.add(k.clone().multiplyScalar(k.dot(v) * 1 - cos_radians));
+        return vnew;
+    }
+
+    this.move = function () {
+        var old_velocity = this.velocity.clone().normalize();
         this.velocity.add( _acceleration );
-        // this.velocity.add(_acceleration.clone().divideScalar(10));
         var l = this.velocity.length();
+        this.velocity.normalize();
+        var dot = this.velocity.dot(old_velocity);
+
+        if (dot == -1) {
+            this.velocity.x = Math.random() - 0.5;
+            this.velocity.y = Math.random() - 0.5;
+            this.velocity.z = Math.random() - 0.5;
+            this.velocity.normalize();
+            dot = this.velocity.dot(old_velocity);
+        } 
+        if (dot < cos_radians) {
+            var axis = old_velocity.cross(this.velocity);
+            this.velocity = rotate(old_velocity, axis);
+        }
+        // else {
+        //     _acceleration.set( 0, 0, 0 );
+        // }
+        _acceleration.set( 0, 0, 0 );
+        this.velocity.multiplyScalar(l);
         if ( l > _maxSpeed ) {
             this.velocity.divideScalar( l / _maxSpeed );
         }
         this.position.add( this.velocity );
-        _acceleration.set( 0, 0, 0 );
+        // // old version
+        // this.velocity.add( _acceleration );
+        // // this.velocity.add(_acceleration.clone().divideScalar(10));
+        // var l = this.velocity.length();
+        // if ( l > _maxSpeed ) {
+        //     this.velocity.divideScalar( l / _maxSpeed );
+        // }
+        // this.position.add( this.velocity );
+        // _acceleration.set( 0, 0, 0 );
     };
     this.checkBounds = function () {
         if ( this.position.x >   _width || this.position.x < - _width || 
@@ -462,7 +504,7 @@ var Bullet = function(init_position, init_velocity, owner) {
             return true;
         }
     };
-}
+};
 
 var Explosion = function(init_position, num_particles, init_vel) {
     var _width = 800, _height = 400, _depth = 1000, _collision_distance = 5;
@@ -503,7 +545,7 @@ var Explosion = function(init_position, num_particles, init_vel) {
                return retval;
            return -retval;
        }
-    }
+    };
 
     // initialize velocities to random points on unit sphere
     function initializeVelocities(velocities, scaleVal) {
@@ -523,15 +565,14 @@ var Explosion = function(init_position, num_particles, init_vel) {
             velocities[i] = velocity;
         }
         return velocities;
-    }
+    };
 
     for(var i = 0; i < this.positions.length; i++) {
         this.positions[i] = init_position.clone();
         this.meshes[i] = null;
-    }
+    };
     initializeVelocities(this.velocities, 3.0);
 
-    
     var distance, boid;
     var _distance_unit = 1;
 
@@ -599,22 +640,118 @@ var Explosion = function(init_position, num_particles, init_vel) {
                 position.z = - _depth;
                 return true;
             }
-            }
-        
+        }
     };
 }
 
 var StarDestroyerBoid = function () {
     this.bounding_box = new THREE.Box3();
     this.triangles = [];
-    this.effective_distance = 50;
+    this.effective_distance = 0;
 
-    // var plane_;
+    this.position = new THREE.Vector3();
+    this.velocity = new THREE.Vector3();
+
+    var _maxSpeed = 0.5;
+
+    var vector = new THREE.Vector3();
+    var _acceleration = new THREE.Vector3();
+    var _avoidWalls = true;
+    var _avoid_accel_scaling = 30*_maxSpeed;
+
     var _face;
-    // var face_normal_ =  new THREE.Vector3();
     var _triangle;
     var _point = new THREE.Vector3();
 
+    var _width, _height, _depth;
+
+    var radians, cos_radians, sin_radians, max_turn_angle = 1;
+    radians = max_turn_angle*Math.PI/180;
+    cos_radians = Math.cos(radians);
+    sin_radians = Math.sin(radians);
+
+    this.setWorldSize = function ( width, height, depth ) {
+        _width = width;
+        _height = height;
+        _depth = depth;
+    };
+
+    this.run = function() {
+        if ( _avoidWalls ) {
+            vector.set( - _width, this.position.y, this.position.z );
+            vector = this.avoid( vector );
+            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.x + _width));
+            _acceleration.add( vector );
+            vector.set( _width, this.position.y, this.position.z );
+            vector = this.avoid( vector );
+            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.x - _width));
+            _acceleration.add( vector );
+            vector.set( this.position.x, - _height, this.position.z );
+            vector = this.avoid( vector );
+            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.y + _height));
+            _acceleration.add( vector );
+            vector.set( this.position.x, _height, this.position.z );
+            vector = this.avoid( vector );
+            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.y - _height));
+            _acceleration.add( vector );
+            vector.set( this.position.x, this.position.y, - _depth );
+            vector = this.avoid( vector );
+            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.z + _depth));
+            _acceleration.add( vector );
+            vector.set( this.position.x, this.position.y, _depth );
+            vector = this.avoid( vector );
+            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.z - _depth));
+            _acceleration.add( vector );
+        }
+        this.move();
+    };
+
+    this.avoid = function ( target ) {
+        var steer = new THREE.Vector3();
+        steer.copy( this.position );
+        steer.sub( target );
+        steer.multiplyScalar( 1 / this.position.distanceToSquared( target ) );
+        return steer;
+    };
+
+    // Rodrigues rotation formula
+    // k is unit vector for axis of rotation
+    // v is vector to be rotate
+    // theta is how much to rotate (in radians)
+    var rotate = function(v, k) {
+        var vnew = v.clone().multiplyScalar(cos_radians);
+        vnew.add(v.cross(k).multiplyScalar(sin_radians));
+        vnew.add(k.clone().multiplyScalar(k.dot(v) * 1 - cos_radians));
+        return vnew;
+    };
+
+    this.move = function () {
+        var old_velocity = this.velocity.clone().normalize();
+        this.velocity.add( _acceleration );
+        var l = this.velocity.length();
+        this.velocity.normalize();
+        var dot = this.velocity.dot(old_velocity);
+
+        if (dot == -1) {
+            this.velocity.x = Math.random() - 0.5;
+            this.velocity.y = Math.random() - 0.5;
+            this.velocity.z = Math.random() - 0.5;
+            this.velocity.normalize();
+            dot = this.velocity.dot(old_velocity);
+        } 
+        if (dot < cos_radians) {
+            var axis = old_velocity.cross(this.velocity);
+            this.velocity = rotate(old_velocity, axis);
+        }
+        _acceleration.set( 0, 0, 0 );
+        this.velocity.multiplyScalar(l);
+        if ( l > _maxSpeed ) {
+            this.velocity.divideScalar( l / _maxSpeed );
+        }
+        this.position.add( this.velocity );
+    };
+
+    // call after running and updating the mesh
     this.updateGeoWithMesh = function(obj) {
         this.bounding_box.copy(obj.geometry.boundingBox).applyMatrix4(obj.matrixWorld);
         for (var i = 0, il = obj.geometry.faces.length; i < il; i++) {
@@ -627,21 +764,6 @@ var StarDestroyerBoid = function () {
             _triangle.a = obj.geometry.vertices[_face.a].clone().applyMatrix4(obj.matrixWorld);
             _triangle.b = obj.geometry.vertices[_face.b].clone().applyMatrix4(obj.matrixWorld);
             _triangle.c = obj.geometry.vertices[_face.c].clone().applyMatrix4(obj.matrixWorld);
-            console.log(_triangle.normal());
-            console.log(_triangle.plane());
-            //console.log(_face.normal.clone().applyMatrix4(obj.matrixWorld));
-
-
-            // point_.copy(obj.geometry.vertices[face_.a]).applyMatrix4(obj.matrixWorld);
-            // face_normal_.copy(face_.normal).applyMatrix4(obj.matrixWorld);
-            // if (this.planes[i] === undefined) {
-            //     this.planes[i] = new THREE.Plane();
-            // }
-            // plane_ = this.planes[i];
-            // plane_.normal.copy(face_normal_).normalize();
-            // point_.copy(obj.geometry.vertices[face_.a]).applyMatrix4(obj.matrixWorld);
-            // console.log(point_);
-            // plane_.w = -(point_.dot(plane_.normal));
         }
-    }
+    };
 }
