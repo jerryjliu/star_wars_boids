@@ -9,6 +9,7 @@ var Boid = function() {
     this.fired = false;
 
     this.pursue = false;
+    this.hp = 1;
     this.beginBehaviorTime = Math.floor(Date.now() / 1000);
     this.curBehaviorTime = this.beginBehaviorTime;
     this.behaviorLength = (Math.random() * 10) + 4;
@@ -370,7 +371,7 @@ var Bullet = function(init_position, init_velocity, owner) {
     };
 }
 
-var Explosion = function(init_position, num_particles) {
+var Explosion = function(init_position, num_particles, init_vel) {
     var _width = 800, _height = 400, _depth = 1000, _collision_distance = 5;
     var _max_distance = 75;
     var _distance_travelled = 0;
@@ -421,6 +422,10 @@ var Explosion = function(init_position, num_particles) {
             velocity.y = Math.random() * 2 - 1;
             velocity.z = Math.random() * 2 - 1;
             velocity.normalize();
+            velocity.divideScalar(3);
+            velocity.add(init_vel.clone().normalize());
+            velocity.normalize();
+
             velocity.multiplyScalar(scaleVal);
             velocities[i] = velocity;
         }

@@ -41,6 +41,13 @@ var Xwing = function () {
         scope.faces.push( new THREE.Face3( a, b, c ) );
 
     }
+    for (i = 0; i < this.faces.length ; i++) {
+       this.faceVertexUvs[0].push([
+         new THREE.Vector2( Math.random(), Math.random() ),
+         new THREE.Vector2( Math.random(), Math.random() ),
+         new THREE.Vector2( Math.random(), Math.random() ),
+       ]);
+    }
 
 }
 
@@ -91,6 +98,14 @@ var Tie = function () {
 
         scope.faces.push( new THREE.Face3( a, b, c ) );
 
+    }
+
+    for (i = 0; i < this.faces.length ; i++) {
+       this.faceVertexUvs[0].push([
+         new THREE.Vector2( Math.random(), Math.random() ),
+         new THREE.Vector2( Math.random(), Math.random() ),
+         new THREE.Vector2( Math.random(), Math.random() ),
+       ]);
     }
 
 }

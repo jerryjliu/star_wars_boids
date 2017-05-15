@@ -10,6 +10,7 @@ var bird, boid;
 var birds_xwing, boids_xwing;
 var birds_tie, boids_tie;
 
+var init_count = 20;
 
 var bullet, bullet_mesh;
 var bullets_xwing, bullet_meshs_xwing;
@@ -53,7 +54,7 @@ if (Detector.webgl) {
 // parameter for whether to use Xwing (true) or Tie (false) constructors for the 
 // meshs
 function init_boids_birds(boids, birds, xwing) {
-    for ( var i = 0; i < 20; i ++ ) {
+    for ( var i = 0; i < init_count; i ++ ) {
     // for ( var i = 0; i < 1; i ++ ) {
         boid = boids[ i ] = new Boid();
         boid.position.x = Math.random() * scene_width_half;
@@ -66,17 +67,27 @@ function init_boids_birds(boids, birds, xwing) {
         boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
         boid.setMaxSpeed(init_vel);
         if (xwing) {
-            bird = birds[ i ] = new THREE.Mesh( new Xwing(), 
-                                        new THREE.MeshBasicMaterial( 
-                                            { color:Math.random() * 0xff0000, 
-                                                side: THREE.DoubleSide } ) );
+            // var material = new THREE.MeshBasicMaterial( 
+            //                                 { color:Math.random() * 0xff0000, 
+            //                                     side: THREE.DoubleSide } );
+            var material = new THREE.MeshPhongMaterial( {color: 0xd3d3d3 });
+            material.map  = THREE.ImageUtils.loadTexture('../images/xwing.png');
+            bird = birds[ i ] = new THREE.Mesh( new Xwing(), material);
             boid.type = 'xwing';
         } else {
-            bird = birds[ i ] = new THREE.Mesh( new Tie(), 
-                                        new THREE.MeshBasicMaterial( 
-                                            { color:Math.random() * 0xff0000, 
-                                                side: THREE.DoubleSide } ) );
+            // var material = new THREE.MeshBasicMaterial( 
+            //                                 { color:Math.random() * 0xff0000, 
+            //                                     side: THREE.DoubleSide } ) ;
+            // var material = new THREE.MeshPhongMaterial({ transparent: false, map: THREE.ImageUtils.loadTexture('../images/tie.jpg') });
+            // material.side = THREE.DoubleSide;
+            // material.color = 0xff0000;
+
+            var material = new THREE.MeshPhongMaterial( {color: 0x808080 });
+            material.map  = THREE.ImageUtils.loadTexture('../images/tie2.png');
+
+            bird = birds[ i ] = new THREE.Mesh( new Tie(), material);
             boid.type = 'tie';
+            console.log(bird.geometry.faceVertexUvs);
         }
         bird.scale.set(2,2,2);
         bird.phase = Math.floor( Math.random() * 62.83 );
@@ -96,16 +107,16 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
         color = bird.material.color;
         color.r = color.g = color.b = Math.max((camera.position.clone().sub(bird.position)).length() / diagonal, 0.2);
 
-        if (boid.pursue) {
-            color.r = 1;
-            color.g = 0;
-            color.b = 0;
-        }
-        else {
-            color.r = 0;
-            color.g = 1;
-            color.b = 0;
-        }
+        // if (boid.pursue) {
+        //     color.r = 1;
+        //     color.g = 0;
+        //     color.b = 0;
+        // }
+        // else {
+        //     color.r = 0;
+        //     color.g = 1;
+        //     color.b = 0;
+        // }
 
         //color.r = color.g = color.b = ( 500 - bird.position.z ) / 1000;
         bird.rotation.y = Math.atan2( - boid.velocity.z, boid.velocity.x );
@@ -134,18 +145,24 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
         bullet_mesh = bullet_meshs[i];
         collision_i = bullet.run(boids);
         if (collision_i !== undefined) {
-            var collide_pos = bullet.position;
+            var collide_pos = bullet.position.clone();
+            var collide_vel = bullet.velocity.clone();
             // TODO: do something here for an explosion when there is a collision
-            scene.remove(birds[collision_i]);
-            if (boids[collision_i] == selectBoid) {
-                selectBoid = undefined;
+            boids[collision_i].hp -= 1;
+            // boid is killed, update necessary data structures
+            if (boids[collision_i].hp == 0) {
+                if (boids[collision_i].type == 'xwing') {
+                    document.getElementById('xwingcount').innerHTML = "" + (boids.length - 1);
+                } else if (boids[collision_i].type == 'tie') {
+                    document.getElementById('tiecount').innerHTML = "" + (boids.length - 1);
+                }
+                scene.remove(birds[collision_i]);
+                boids.splice(collision_i, 1);
+                birds.splice(collision_i, 1);
+                console.log('count: ' + boids.length);
+                var explosion = create_explosion(collide_pos, collide_vel);
+                explosions.push(explosion);
             }
-            boids.splice(collision_i, 1);
-            birds.splice(collision_i, 1);
-            console.log('count: ' + boids.length);
-
-            var explosion = create_explosion(collide_pos);
-            explosions.push(explosion);
         }
         if (bullet.remove_this) {
             scene.remove(bullet_mesh);
@@ -161,9 +178,9 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
 }
 
 // create explosion
-function create_explosion(init_pos) {
+function create_explosion(init_pos, init_vel) {
     var numparticles = 75;
-    var explosion = new Explosion(init_pos, numparticles);
+    var explosion = new Explosion(init_pos, numparticles, init_vel);
     var geometry = new THREE.BoxGeometry( 4, 4, 4 );
     var material = new THREE.MeshBasicMaterial( { color: explosion_color } );
     particle_mesh = new THREE.Mesh( geometry, material );
@@ -332,6 +349,15 @@ function init() {
         window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.z = 450;
 
+    // initialize lights
+    // var dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    // dirLight.position.set(100, 100, 50);
+    // scene.add(dirLight);
+
+    var alight = new THREE.AmbientLight( 0x404040 ); // soft white light
+    alight.intensity = 10.0;
+    scene.add( alight );
+
     // initialize boids and birds 
     birds_xwing = [];
     boids_xwing = [];
@@ -360,6 +386,7 @@ function init() {
 
     stats = new Stats();
     document.getElementById( 'container' ).appendChild(stats.dom);
+    initText();
 
     window.addEventListener('resize', onWindowResize, false );
     window.addEventListener('click', onLeftClick, true); 
@@ -373,6 +400,45 @@ function init() {
     selectGeo = new THREE.SphereGeometry(15);
     selectMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
     selectSphereMesh = new THREE.Mesh( selectGeo, selectMaterial);
+}
+
+function initText() {
+    var div1 = document.createElement('div');
+    div1.style.position = 'absolute';
+    //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+    div1.style.width = 100;
+    div1.style.height = 100;
+    div1.style.backgroundColor = "transparent";
+    div1.style.color = "white";
+    div1.innerHTML = "X-Wing: ";
+    div1.style.top = 200 + 'px';
+    div1.style.left = 200 + 'px';
+    div1.id = "xwingdiv";
+
+    var count1 = document.createElement('p');
+    count1.innerHTML = "" + init_count;
+    count1.id = "xwingcount";
+    div1.appendChild(count1);
+
+    var div2 = document.createElement('div');
+    div2.style.position = 'absolute';
+    //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+    div2.style.width = 100;
+    div2.style.height = 100;
+    div2.style.backgroundColor = "transparent";
+    div2.style.color = "white";
+    div2.innerHTML = "Tie Fighter: ";
+    div2.style.top = 200 + 'px';
+    div2.style.left = 400 + 'px';
+    div2.id = "tiediv";
+
+    var count2 = document.createElement('p');
+    count2.innerHTML = "" + init_count;
+    count2.id = "tiecount";
+    div2.appendChild(count2);
+
+    document.body.appendChild(div1);
+    document.body.appendChild(div2)
 }
 
 

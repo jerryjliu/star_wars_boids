@@ -1,0 +1,8 @@
+@font-face {
+  font-family: 'MyWebFont';
+  src: url('./Death_Star.otf'); 
+}
+
+html {
+	font-family: MyWebFont;
+}
