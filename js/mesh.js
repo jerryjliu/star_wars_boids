@@ -121,7 +121,7 @@ var StarDestroyer = function () {
     var half_depth = 20;
     var half_height = 5;
     var half_width = 10;
-    var scale = 5;
+    var scale = 10;
 
     half_depth *= scale;
     half_height *= scale;

@@ -41,6 +41,7 @@ var selectBoid;
 var firstPersonControls;
 var inFirstPerson = false;
 var raycaster, mouse;
+var worldCameraPosition = new THREE.Vector3();
 
 // Star Destroyer
 var sd;
@@ -442,9 +443,7 @@ function init() {
     selectGeo = new THREE.SphereGeometry(10);
     selectMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
     selectSphereMesh = new THREE.Mesh( selectGeo, selectMaterial);
-    firstPersonCamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
-    firstPersonCamera.position.z = 50;
-    firstPersonControls = new THREE.PointerLockControls( firstPersonCamera );
+    firstPersonControls = new THREE.PointerLockControls( camera );
     firstPersonControls.enabled = false;
     scene.add( firstPersonControls.getObject() );
     var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
@@ -508,7 +507,7 @@ function render() {
     if (selectBoid !== undefined) {
         if (inFirstPerson) {
             firstPersonControls.getObject().position.copy(selectBoid.position);
-            current_camera = firstPersonCamera;
+            //current_camera = firstPersonCamera;
         }
         else {
             selectSphereMesh.position.copy(selectBoid.position);
@@ -530,15 +529,16 @@ function exitFirstPerson() {
     selectBoid = undefined;
     inFirstPerson = false;
     firstPersonControls.enabled = false;
-    controls.enabled = true;    
+    controls.enabled = true;   
+    camera.position.copy(worldCameraPosition);
 }
 
 // --------------------- Event Handlers ---------------------------
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    firstPersonCamera.aspect = window.innerWidth / window.innerHeight;
-    firstPersonCamera.updateProjectionMatrix();
+    // firstPersonCamera.aspect = window.innerWidth / window.innerHeight;
+    // firstPersonCamera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
 
     SCREEN_WIDTH = window.innerWidth,
@@ -567,6 +567,8 @@ function onKeyDown( event ) {
                 firstPersonControls.enabled = true;
                 firstPersonControls.getObject().position.copy(selectBoid.position);
                 inFirstPerson = true;
+                worldCameraPosition.copy(camera.position);
+                camera.position.z = 50;
                 scene.remove(selectSphereMesh);
             }
             else {
