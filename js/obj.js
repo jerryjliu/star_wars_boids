@@ -344,27 +344,27 @@ var Bullet = function(init_position, init_velocity, owner) {
 
     this.checkBounds = function () {
         if ( this.position.x >   _width ) {
-            this.position.x = - _width;
+            this.position.x = _width;
             return true;
         }
         if ( this.position.x < - _width ) {
-            this.position.x =   _width;
+            this.position.x =  - _width;
             return true;
         }
         if ( this.position.y >   _height ) {
-            this.position.y = - _height;
+            this.position.y = _height;
             return true;
         }
         if ( this.position.y < - _height ) {
-            this.position.y =  _height;
+            this.position.y = - _height;
             return true;
         }
         if ( this.position.z >  _depth ) {
-            this.position.z = - _depth;
+            this.position.z = _depth;
             return true;
         }
         if ( this.position.z < - _depth ) {
-            this.position.z =  _depth;
+            this.position.z = - _depth;
             return true;
         }
     };
@@ -478,27 +478,27 @@ var Explosion = function(init_position, num_particles) {
         for(var i = 0; i < this.positions.length; i++) {
             var position = this.positions[i];
             if ( position.x >   _width ) {
-                position.x = - _width;
+                position.x = _width;
                 return true;
             }
             if ( position.x < - _width ) {
-                position.x =   _width;
+                position.x =  - _width;
                 return true;
             }
             if ( position.y >   _height ) {
-                position.y = - _height;
+                position.y = _height;
                 return true;
             }
             if ( position.y < - _height ) {
-                position.y =  _height;
+                position.y = - _height;
                 return true;
             }
             if ( position.z >  _depth ) {
-                position.z = - _depth;
+                position.z = _depth;
                 return true;
             }
             if ( position.z < - _depth ) {
-                position.z =  _depth;
+                position.z = - _depth;
                 return true;
             }
             }
