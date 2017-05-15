@@ -94,9 +94,21 @@ function init_boids_birds(boids, birds, xwing) {
         }
         bird.scale.set(2,2,2);
         bird.phase = Math.floor( Math.random() * 62.83 );
-        bird.boid_ref = boid;
         scene.add( bird );
     }
+}
+
+function init_star_destroyer() {
+    var objLoader = new THREE.OBJLoader();
+    objLoader.load('models/star_destroyer.obj', function (obj) {
+        obj.traverse(function (child) {
+            if (child instanceof THREE.Mesh) {
+                var material = new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } );
+                child.material = material;
+            }
+        });
+        scene.add(obj);
+    });
 }
 
 // Update the locations of the boids and corresponding birds (meshs) by calling
@@ -348,6 +360,7 @@ function init() {
 
     init_boids_birds(boids_xwing, birds_xwing, true);
     init_boids_birds(boids_tie, birds_tie, false);
+    init_star_destroyer();
 
     add_boundaries(scene);
 
@@ -532,17 +545,17 @@ function onKeyDown( event ) {
             break;
     }
 }
-function onKeyUp( event ) {
-    switch ( event.keyCode ) {
-        case 16: 
-            isShiftDown = false; 
-            controls.enabled = true;
-            break;
+
+function onKeyUp(e) {
+    // 16 is key code for shift key
+    if (e.keyCode == 16) {
+        // renable rotation
+        controls.enabled = true;
     }
 }
 
 function onLeftClick(e) {
-    if (isShiftDown) {
+    if (e.shiftKey) {
         mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
@@ -552,8 +565,6 @@ function onLeftClick(e) {
         // calculate objects intersecting the picking ray
         var intersects = raycaster.intersectObjects( birds_xwing );
         console.log(intersects.length);
-        var min_dist = Infinity;
-        var min_boid = undefined;
         for ( var i = 0; i < intersects.length; i++ ) {
             if (intersects[i].distance < min_dist){
                 min_dist = intersects[i].distance;
