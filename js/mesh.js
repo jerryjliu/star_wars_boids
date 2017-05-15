@@ -112,3 +112,67 @@ var Tie = function () {
 
 Tie.prototype = Object.create( THREE.Geometry.prototype );
 Tie.prototype.constructor = Tie;
+
+var StarDestroyer = function () {
+
+    var scope = this;
+    THREE.Geometry.call( this );
+
+    var half_depth = 20;
+    var half_height = 5;
+    var half_width = 10;
+    var scale = 5;
+
+    half_depth *= scale;
+    half_height *= scale;
+    half_width *= scale;
+
+    v(half_depth, 0, 0); // 0 - tip of destroyer
+    v(-half_depth, half_height, 0); // 1 - back top of destroyer
+    v(-half_depth, 0, half_width); // 2 - back right of destroyer
+    v(-half_depth, 0, -half_width); // 3 - back left of destroyer
+    v(-half_depth, 0, 0); // 4 - back center of destroyer
+    v(-half_depth, -half_height, 0); // 5 - back bottom of destroyer
+
+    f3(0, 1, 2); // top right
+    f3(1, 0, 3); // top left
+    f3(0, 2, 5); // bottom right
+    f3(0, 3, 5); // bottom left
+
+    f3(1, 2, 4); // back top right
+    f3(4, 2, 5); // back bot right
+    f3(3, 1, 4); // back top left
+    f3(3, 4, 5); // back bot left
+
+
+    function v( x, y, z ) {
+
+        scope.vertices.push( new THREE.Vector3( x, y, z ) );
+
+    }
+
+    function f3( a, b, c ) {
+
+        scope.faces.push( new THREE.Face3( a, b, c ) );
+
+    }
+
+    for (i = 0; i < this.faces.length ; i++) {
+       this.faceVertexUvs[0].push([
+         new THREE.Vector2( Math.random(), Math.random() ),
+         new THREE.Vector2( Math.random(), Math.random() ),
+         new THREE.Vector2( Math.random(), Math.random() ),
+       ]);
+    }
+
+    this.updateGeo = function() {
+        scope.computeFaceNormals();
+        scope.computeBoundingBox();
+    };
+
+    this.updateGeo();
+
+}
+
+StarDestroyer.prototype = Object.create( THREE.Geometry.prototype );
+StarDestroyer.prototype.constructor = StarDestroyer;

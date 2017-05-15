@@ -10,7 +10,7 @@ var bird, boid;
 var birds_xwing, boids_xwing;
 var birds_tie, boids_tie;
 
-var init_count = 20;
+var init_count = 2;
 
 var bullet, bullet_mesh;
 var bullets_xwing, bullet_meshs_xwing;
@@ -22,8 +22,8 @@ const explosion_color = 0xffa500;
 
 var explosions;
 
-var scene_width_half = 400;
-var scene_height_half = 200;
+var scene_width_half = 800;
+var scene_height_half = 400;
 var scene_depth_half = 500;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
@@ -58,14 +58,21 @@ if (Detector.webgl) {
 // meshs
 function init_boids_birds(boids, birds, xwing) {
     for ( var i = 0; i < init_count; i ++ ) {
-    // for ( var i = 0; i < 1; i ++ ) {
         boid = boids[ i ] = new Boid();
-        boid.position.x = Math.random() * scene_width_half;
-        boid.position.y = Math.random() * scene_height_half;
-        boid.position.z = Math.random() * scene_depth_half;
-        boid.velocity.x = Math.random() * init_vel - init_vel/2.;
+        //boid.position.x = Math.random() * scene_width_half * 2 - scene_width_half;
+        boid.position.y = Math.random() * scene_height_half * 2 - scene_height_half;
+        boid.position.z = Math.random() * scene_depth_half*2 - scene_depth_half;
+        //boid.velocity.x = Math.random() * init_vel - init_vel/2.;
         boid.velocity.y = Math.random() * init_vel - init_vel/2.;
         boid.velocity.z = Math.random() * init_vel - init_vel/2.;
+        if (xwing) {
+            boid.position.x = Math.random() * scene_width_half/4 + 3/5*scene_width_half;
+            console.log(boid.position.z);
+        } else {
+            boid.position.x = -(Math.random() * scene_width_half/4 + 3/5*scene_width_half);
+            boid.velocity.x = Math.random() * init_vel;
+        }
+            
         boid.setAvoidWalls( true );
         boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
         boid.setMaxSpeed(init_vel);
@@ -90,7 +97,7 @@ function init_boids_birds(boids, birds, xwing) {
 
             bird = birds[ i ] = new THREE.Mesh( new Tie(), material);
             boid.type = 'tie';
-            console.log(bird.geometry.faceVertexUvs);
+            // console.log(bird.geometry.faceVertexUvs);
         }
         bird.scale.set(2,2,2);
         bird.phase = Math.floor( Math.random() * 62.83 );
@@ -99,16 +106,30 @@ function init_boids_birds(boids, birds, xwing) {
 }
 
 function init_star_destroyer() {
-    var objLoader = new THREE.OBJLoader();
-    objLoader.load('models/star_destroyer.obj', function (obj) {
-        obj.traverse(function (child) {
-            if (child instanceof THREE.Mesh) {
-                var material = new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } );
-                child.material = material;
-            }
-        });
-        scene.add(obj);
-    });
+    // var objLoader = new THREE.OBJLoader();
+    // objLoader.load('models/star_destroyer.obj', function (obj) {
+    //     obj.traverse(function (child) {
+    //         if (child instanceof THREE.Mesh) {
+    //             var material = new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } );
+    //             child.material = material;
+    //         }
+    //     });
+    //     scene.add(obj);
+    // });
+    var material = new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } );
+    var sd = new THREE.Mesh( new StarDestroyer(), material)
+    sd.position.set(10, 20, 50);
+    // sd.rotation.x = Math.PI/2;
+    // sd.rotation.y = Math.atan2( - 10, 10 );
+    // sd.rotation.z = Math.asin( 10 / Math.sqrt(300) );
+    // sd.geometry.updateGeo();
+    scene.add( sd );
+    console.log(sd);
+    scene.updateMatrixWorld();
+    console.log(sd.geometry.boundingBox.max);
+    console.log(sd.geometry.boundingBox.max.clone().setFromMatrixPosition(sd.matrix));
+    console.log(sd.geometry.boundingBox.min.clone());
+    console.log(sd.geometry.boundingBox.min.clone().setFromMatrixPosition(sd.matrixWorld));
 }
 
 // Update the locations of the boids and corresponding birds (meshs) by calling
