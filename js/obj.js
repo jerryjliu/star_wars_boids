@@ -13,6 +13,8 @@ var Boid = function() {
     this.beginBehaviorTime = Math.floor(Date.now() / 1000);
     this.curBehaviorTime = this.beginBehaviorTime;
     this.behaviorLength = (Math.random() * 10) + 4;
+    var _lastFireTime = 0;
+    var _time_between_fires = 200; // in ms
 
     var bullet;
 
@@ -27,6 +29,20 @@ var Boid = function() {
             return undefined;
         }
     };
+
+    this.forceFireBullet = function () {
+        var now = Date.now()
+        if (now - _lastFireTime > _time_between_fires) {
+            bullet = new Bullet(this.position.clone(), this.velocity.clone(), this);
+            bullet.setWorldSize(_width, _height, _depth);
+            this.fired = true;
+            _lastFireTime = now;
+            return bullet;
+        }
+        else {
+            return undefined;
+        }
+    }
 
     this.setGoal = function ( target ) {
         _goal = target;
@@ -309,7 +325,7 @@ var Boid = function() {
 }
 
 var Bullet = function(init_position, init_velocity, owner) {
-    var _width = 500, _height = 500, _depth = 200, _collision_distance = 5;
+    var _width = 500, _height = 500, _depth = 200, _collision_distance = 8;
     var _max_distance = 500;
     var _distance_travelled = 0;
     var _owner = owner;

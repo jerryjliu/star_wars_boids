@@ -143,8 +143,8 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
         bird.phase = ( bird.phase + ( Math.max( 0, bird.rotation.z ) + 0.1 )  ) % 62.83;
         // bird.geometry.vertices[ 5 ].y = bird.geometry.vertices[ 4 ].y = Math.sin( bird.phase ) * 5;
 
-        if (boid.pursue && !boid.fired) {
-            if (boid.type == 'xwing' && boid != selectBoid) {
+        if (boid.pursue && !boid.fired && boid != selectBoid) {
+            if (boid.type == 'xwing') {
                 init_bullet_obj(boid, bullets_xwing, bullet_meshs_xwing, bullet_xwing_color);
             } else {
                 init_bullet_obj(boid, bullets_tie, bullet_meshs_tie, bullet_tie_color);
@@ -245,8 +245,13 @@ function update_explosions(explosions) {
     }
 }
 
-function init_bullet_obj(owner, bullet_arr, bullet_mesh_arr, color) {
-    bullet = owner.fireBullet();
+function init_bullet_obj(owner, bullet_arr, bullet_mesh_arr, color, force_fire=false) {
+    if (force_fire) {
+        bullet = owner.forceFireBullet();
+    }
+    else {
+        bullet = owner.fireBullet();
+    }
     if (bullet !== undefined) {
         bullet_arr.push(bullet);
         var geometry = new THREE.BoxGeometry( 1, 1, 1 );
@@ -385,7 +390,7 @@ function init() {
     // For selecting units
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
-    selectGeo = new THREE.SphereGeometry(15);
+    selectGeo = new THREE.SphereGeometry(10);
     selectMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
     selectSphereMesh = new THREE.Mesh( selectGeo, selectMaterial);
     firstPersonCamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
@@ -472,7 +477,7 @@ function exitFirstPerson() {
     selectBoid = undefined;
     inFirstPerson = false;
     firstPersonControls.enabled = false;
-    controls.enable = true;    
+    controls.enabled = true;    
 }
 
 // --------------------- Event Handlers ---------------------------
@@ -541,7 +546,7 @@ function onKeyDown( event ) {
                 init_bullet_obj(selectBoid, 
                                 bullets_xwing, 
                                 bullet_meshs_xwing, 
-                                bullet_xwing_color);
+                                bullet_xwing_color, true);
             break;
     }
 }
