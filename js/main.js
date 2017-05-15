@@ -70,7 +70,7 @@ function init_boids_birds(boids, birds, xwing) {
             // var material = new THREE.MeshBasicMaterial( 
             //                                 { color:Math.random() * 0xff0000, 
             //                                     side: THREE.DoubleSide } );
-            var material = new THREE.MeshPhongMaterial( {color: 0xd3d3d3 });
+            var material = new THREE.MeshPhongMaterial( {color: 0xd3d3d3, side: THREE.DOubleSide });
             material.map  = THREE.ImageUtils.loadTexture('../images/xwing.png');
             bird = birds[ i ] = new THREE.Mesh( new Xwing(), material);
             boid.type = 'xwing';
@@ -82,7 +82,7 @@ function init_boids_birds(boids, birds, xwing) {
             // material.side = THREE.DoubleSide;
             // material.color = 0xff0000;
 
-            var material = new THREE.MeshPhongMaterial( {color: 0x808080 });
+            var material = new THREE.MeshPhongMaterial( {color: 0x808080, side: THREE.DoubleSide });
             material.map  = THREE.ImageUtils.loadTexture('../images/tie2.png');
 
             bird = birds[ i ] = new THREE.Mesh( new Tie(), material);
