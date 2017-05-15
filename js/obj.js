@@ -300,7 +300,7 @@ var Boid = function() {
 
 var Bullet = function(init_position, init_velocity, owner) {
     var _width = 500, _height = 500, _depth = 200, _collision_distance = 5;
-    var _max_distance = 200;
+    var _max_distance = 500;
     var _distance_travelled = 0;
     var _owner = owner;
     this.remove_this = false;
@@ -371,7 +371,7 @@ var Bullet = function(init_position, init_velocity, owner) {
 }
 
 var Explosion = function(init_position, num_particles) {
-    var _width = 500, _height = 500, _depth = 200, _collision_distance = 5;
+    var _width = 800, _height = 400, _depth = 1000, _collision_distance = 5;
     var _max_distance = 75;
     var _distance_travelled = 0;
     this.remove_this = false;
@@ -416,7 +416,10 @@ var Explosion = function(init_position, num_particles) {
         standard = gaussian(0, 1);
         for(var i = 0; i < velocities.length; i++) {
             var velocity = new THREE.Vector3();
-            velocity.x = standard(); velocity.y = standard(); velocity.z = standard();
+            // velocity.x = standard(); velocity.y = standard(); velocity.z = standard();
+            velocity.x = Math.random() * 2 - 1;
+            velocity.y = Math.random() * 2 - 1;
+            velocity.z = Math.random() * 2 - 1;
             velocity.normalize();
             velocity.multiplyScalar(scaleVal);
             velocities[i] = velocity;
@@ -460,6 +463,9 @@ var Explosion = function(init_position, num_particles) {
 
     this.run = function() {
         if (_distance_travelled > _max_distance || this.checkBounds()) {
+            // console.log("REMOVING");
+            // if (_distance_travelled > _max_distance) console.log("because of max distance");
+            // else console.log("BECAUE OF BOUNDS");
             this.remove_this = true;
             return undefined;
         }

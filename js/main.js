@@ -15,6 +15,10 @@ var bullet, bullet_mesh;
 var bullets_xwing, bullet_meshs_xwing;
 var bullets_tie, bullet_meshs_tie;
 
+const bullet_xwing_color = 0xff4500;
+const bullet_tie_color = 0x00ff45;
+const explosion_color = 0xffa500;
+
 var explosions;
 
 var scene_width_half = 400;
@@ -23,7 +27,8 @@ var scene_depth_half = 500;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
                         scene_depth_half*scene_depth_half*4);
-var init_vel = 5;
+// var init_vel = 5;
+var init_vel = 3;
 //var init_vel = 0.2;
 var collision_i;
 
@@ -66,6 +71,7 @@ function init_boids_birds(boids, birds, xwing) {
                                                 side: THREE.DoubleSide } ) );
             boid.type = 'tie';
         }
+        bird.scale.set(2,2,2);
         bird.phase = Math.floor( Math.random() * 62.83 );
         scene.add( bird );
     }
@@ -98,6 +104,14 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
         bird.rotation.z = Math.asin( boid.velocity.y / boid.velocity.length() );
         bird.phase = ( bird.phase + ( Math.max( 0, bird.rotation.z ) + 0.1 )  ) % 62.83;
         // bird.geometry.vertices[ 5 ].y = bird.geometry.vertices[ 4 ].y = Math.sin( bird.phase ) * 5;
+
+        if (boid.pursue && !boid.fired) {
+            if (boid.type == 'xwing') {
+                init_bullet_obj(boid, bullets_xwing, bullet_meshs_xwing, bullet_xwing_color);
+            } else {
+                init_bullet_obj(boid, bullets_tie, bullet_meshs_tie, bullet_tie_color);
+            }
+        }
     }
 }
 
@@ -139,8 +153,8 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
 function create_explosion(init_pos) {
     var numparticles = 75;
     var explosion = new Explosion(init_pos, numparticles);
-    var geometry = new THREE.BoxGeometry( 2, 2, 2 );
-    var material = new THREE.MeshBasicMaterial( { color: 0xffa500 } );
+    var geometry = new THREE.BoxGeometry( 4, 4, 4 );
+    var material = new THREE.MeshBasicMaterial( { color: explosion_color } );
     particle_mesh = new THREE.Mesh( geometry, material );
     explosion.setMesh(particle_mesh);
     for(var i = 0; i < explosion.meshes.length; i++) {
@@ -173,6 +187,19 @@ function update_explosions(explosions) {
             mesh.scale.y *= 0.97;
             mesh.scale.z *= 0.97;
         }
+    }
+}
+
+function init_bullet_obj(owner, bullet_arr, bullet_mesh_arr, color) {
+    bullet = owner.fireBullet();
+    if (bullet !== undefined) {
+        bullet_arr.push(bullet);
+        var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        var material = new THREE.MeshBasicMaterial( { color: color } );
+        bullet_mesh = new THREE.Mesh( geometry, material );
+        bullet_mesh.position.copy(bullet.position);
+        scene.add( bullet_mesh );
+        bullet_mesh_arr.push(bullet_mesh);
     }
 }
 
@@ -389,31 +416,33 @@ function onLeftClick(e) {
     }
     else {
         for (var i = 0, il = boids_xwing.length; i < il; i++) {
-            bullet = boids_xwing[i].fireBullet();
-            if (bullet !== undefined) {
-                bullets_xwing.push(bullet);
-                var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-                var material = new THREE.MeshBasicMaterial( { color: 0xff4500 } );
-                bullet_mesh = new THREE.Mesh( geometry, material );
-                bullet_mesh.position.copy(bullet.position);
-                scene.add( bullet_mesh );
-                bullet_meshs_xwing.push(bullet_mesh)
-            }
+            // bullet = boids_xwing[i].fireBullet();
+            // if (bullet !== undefined) {
+            //     bullets_xwing.push(bullet);
+            //     var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+            //     var material = new THREE.MeshBasicMaterial( { color: 0xff4500 } );
+            //     bullet_mesh = new THREE.Mesh( geometry, material );
+            //     bullet_mesh.position.copy(bullet.position);
+            //     scene.add( bullet_mesh );
+            //     bullet_meshs_xwing.push(bullet_mesh)
+            // }
+            init_bullet_obj(boids_xwing[i], bullets_xwing, bullet_meshs_xwing, bullet_xwing_color);
         }
     }
 }
 
 function onRightClick() {
     for (var i = 0, il = boids_tie.length; i < il; i++) {
-        bullet = boids_tie[i].fireBullet();
-        if (bullet !== undefined) {
-            bullets_tie.push(bullet);
-            var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-            var material = new THREE.MeshBasicMaterial( { color: 0x00ff45 } );
-            bullet_mesh = new THREE.Mesh( geometry, material );
-            bullet_mesh.position.copy(bullet.position);
-            scene.add( bullet_mesh );
-            bullet_meshs_tie.push(bullet_mesh)
-        }
+        // bullet = boids_tie[i].fireBullet();
+        // if (bullet !== undefined) {
+        //     bullets_tie.push(bullet);
+        //     var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        //     var material = new THREE.MeshBasicMaterial( { color: 0x00ff45 } );
+        //     bullet_mesh = new THREE.Mesh( geometry, material );
+        //     bullet_mesh.position.copy(bullet.position);
+        //     scene.add( bullet_mesh );
+        //     bullet_meshs_tie.push(bullet_mesh)
+        // }
+        init_bullet_obj(boids_tie[i], bullets_tie, bullet_meshs_tie, bullet_tie_color);
     }
 }
