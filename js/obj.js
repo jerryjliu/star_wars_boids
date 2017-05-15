@@ -147,6 +147,7 @@ var Boid = function() {
         }
 
         this.move();
+        this.checkBounds();
 
     };
     this.flock = function ( boids, enemy_boids, enemy_bullets ) {
@@ -197,12 +198,17 @@ var Boid = function() {
         _acceleration.set( 0, 0, 0 );
     };
     this.checkBounds = function () {
-        if ( this.position.x >   _width ) this.position.x = - _width;
-        if ( this.position.x < - _width ) this.position.x =   _width;
-        if ( this.position.y >   _height ) this.position.y = - _height;
-        if ( this.position.y < - _height ) this.position.y =  _height;
-        if ( this.position.z >  _depth ) this.position.z = - _depth;
-        if ( this.position.z < - _depth ) this.position.z =  _depth;
+        if ( this.position.x >   _width || this.position.x < - _width || 
+            this.position.y >   _height || this.position.y < - _height ||
+            this.position.z >  _depth || this.position.z < - _depth ) 
+            this.collided = true;
+
+        // if ( this.position.x >   _width ) this.position.x = - _width;
+        // if ( this.position.x < - _width ) this.position.x =   _width;
+        // if ( this.position.y >   _height ) this.position.y = - _height;
+        // if ( this.position.y < - _height ) this.position.y =  _height;
+        // if ( this.position.z >  _depth ) this.position.z = - _depth;
+        // if ( this.position.z < - _depth ) this.position.z =  _depth;
     };
     //
     this.avoid = function ( target ) {
