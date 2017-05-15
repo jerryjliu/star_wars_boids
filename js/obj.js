@@ -104,6 +104,15 @@ var Boid = function() {
         if (this.pursue) _acceleration.add(this.pursueEnemy(enemy_boids));
         else _acceleration.add(this.fleeEnemy(enemy_boids));
     };
+    this.forcedMove = function (velocity) {
+        this.velocity.copy( velocity ).multiplyScalar(_maxSpeed);
+        var l = this.velocity.length();
+        if ( l > _maxSpeed ) {
+            this.velocity.divideScalar( l / _maxSpeed );
+        }
+        this.position.add( this.velocity );
+        _acceleration.set( 0, 0, 0 );
+    }
     this.move = function () {
 
         this.velocity.add( _acceleration );

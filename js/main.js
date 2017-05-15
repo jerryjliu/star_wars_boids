@@ -39,6 +39,9 @@ var selectGeo;
 var selectMaterial;
 var selectSphereMesh;
 var selectBoid;
+var firstPersonControls;
+var inFirstPerson = false;
+var raycaster, mouse;
 
 // compatability check before starting
 if (Detector.webgl) {
@@ -70,7 +73,7 @@ function init_boids_birds(boids, birds, xwing) {
             // var material = new THREE.MeshBasicMaterial( 
             //                                 { color:Math.random() * 0xff0000, 
             //                                     side: THREE.DoubleSide } );
-            var material = new THREE.MeshPhongMaterial( {color: 0xd3d3d3, side: THREE.DOubleSide });
+            var material = new THREE.MeshPhongMaterial( {color: 0xd3d3d3, side: THREE.DoubleSide });
             material.map  = THREE.ImageUtils.loadTexture('../images/xwing.png');
             bird = birds[ i ] = new THREE.Mesh( new Xwing(), material);
             boid.type = 'xwing';
@@ -101,7 +104,11 @@ function init_boids_birds(boids, birds, xwing) {
 function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
     for ( var i = 0, il = birds.length; i < il; i++ ) {
         boid = boids[ i ];
-        boid.run( boids, enemy_boids, enemy_bullets);
+        if (boid == selectBoid && inFirstPerson) {
+            boid.forcedMove(firstPersonControls.getDirection());
+        }
+        else
+            boid.run( boids, enemy_boids, enemy_bullets);
         bird = birds[ i ];
         bird.position.copy( boids[ i ].position );
         color = bird.material.color;
@@ -125,7 +132,7 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
         // bird.geometry.vertices[ 5 ].y = bird.geometry.vertices[ 4 ].y = Math.sin( bird.phase ) * 5;
 
         if (boid.pursue && !boid.fired) {
-            if (boid.type == 'xwing') {
+            if (boid.type == 'xwing' && boid != selectBoid) {
                 init_bullet_obj(boid, bullets_xwing, bullet_meshs_xwing, bullet_xwing_color);
             } else {
                 init_bullet_obj(boid, bullets_tie, bullet_meshs_tie, bullet_tie_color);
@@ -158,8 +165,12 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
                 }
                 scene.remove(birds[collision_i]);
                 if (boids[collision_i] == selectBoid) {
-                    selectBoid = undefined;
-                    scene.remove( selectSphereMesh );
+                    if (inFirstPerson) {
+                        exitFirstPerson();
+                    } else {
+                        selectBoid = undefined;
+                        scene.remove( selectSphereMesh );
+                    }
                 }
                 boids.splice(collision_i, 1);
                 birds.splice(collision_i, 1);
@@ -304,48 +315,8 @@ function add_boundaries(scene) {
     line = line.clone();
     line.position.copy(new THREE.Vector3(scene_width_half, 0, 0));
     scene.add( line );
-
-
-    // initialize the geometry of the scene
-    // var geometry = new THREE.PlaneBufferGeometry( scene_width_half*2, scene_height_half*2);
-    // var material = new THREE.MeshBasicMaterial( {color: 0x000000, side: THREE.DoubleSide, wireframe:true} );
-    // var plane = new THREE.Mesh( geometry, material );
-    // var line, d1, d2, step=50;
-    // plane.position.copy(new THREE.Vector3(0, 0, -scene_depth_half));
-    // scene.add( plane );
-
-
-    // geometry = new THREE.PlaneBufferGeometry( scene_width_half*2, scene_depth_half*2);
-    // material = new THREE.MeshBasicMaterial( {color: 0xff0000, side: THREE.DoubleSide, wireframe:true} );
-    // plane = new THREE.Mesh( geometry, material );
-    // plane.position.copy(new THREE.Vector3(0, -scene_height_half, 0));
-    // plane.rotateX( - Math.PI / 2);
-    // scene.add( plane );
-
-    // geometry = new THREE.PlaneBufferGeometry( scene_width_half*2, scene_depth_half*2);
-    // material = new THREE.MeshBasicMaterial( {color: 0xff0000, side: THREE.DoubleSide, wireframe:true} );
-    // plane = new THREE.Mesh( geometry, material );
-    // plane.position.copy(new THREE.Vector3(0, scene_height_half, 0));
-    // plane.rotateX(Math.PI / 2);
-    // scene.add( plane );
-
-    // geometry = new THREE.PlaneBufferGeometry( scene_depth_half*2, scene_height_half*2);
-    // material = new THREE.MeshBasicMaterial( {color: 0x00ee00, side: THREE.DoubleSide, wireframe:true} );
-    // plane = new THREE.Mesh( geometry, material );
-    // plane.position.copy(new THREE.Vector3(-scene_width_half, 0, 0));
-    // plane.rotateY( - Math.PI / 2);
-    // scene.add( plane );
-
-    // geometry = new THREE.PlaneBufferGeometry( scene_depth_half*2, scene_height_half*2);
-    // material = new THREE.MeshBasicMaterial( {color: 0x00ee00, side: THREE.DoubleSide, wireframe:true} );
-    // plane = new THREE.Mesh( geometry, material );
-    // plane.position.copy(new THREE.Vector3(scene_width_half, 0, 0));
-    // plane.rotateY(Math.PI / 2);
-    // scene.add( plane );
-
 }
 
-var raycaster, mouse;
 // ------------ Main Initializer and Renderer Loop -----------------
 function init() {
     scene = new THREE.Scene();
@@ -404,6 +375,13 @@ function init() {
     selectGeo = new THREE.SphereGeometry(15);
     selectMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
     selectSphereMesh = new THREE.Mesh( selectGeo, selectMaterial);
+    firstPersonCamera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
+    firstPersonCamera.position.z = 50;
+    firstPersonControls = new THREE.PointerLockControls( firstPersonCamera );
+    firstPersonControls.enabled = false;
+    scene.add( firstPersonControls.getObject() );
+    var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+    console.log('have', havePointerLock);
 }
 
 function initText() {
@@ -447,6 +425,7 @@ function initText() {
 
 
 function render() {
+    var current_camera = camera;
     update_boids_birds(boids_xwing, birds_xwing, boids_tie, bullets_tie);
     update_boids_birds(boids_tie, birds_tie, boids_xwing, bullets_xwing);
 
@@ -456,11 +435,16 @@ function render() {
     update_explosions(explosions);
 
     if (selectBoid !== undefined) {
-        selectSphereMesh.position.copy(selectBoid.position);
-        console.log('still selected');
+        if (inFirstPerson) {
+            firstPersonControls.getObject().position.copy(selectBoid.position);
+            current_camera = firstPersonCamera;
+        }
+        else {
+            selectSphereMesh.position.copy(selectBoid.position);
+        }
     }
 
-    renderer.render( scene, camera );
+    renderer.render( scene, current_camera );
 }
 
 function animate() {
@@ -471,19 +455,80 @@ function animate() {
     stats.end();
 }
 
+function exitFirstPerson() {
+    selectBoid = undefined;
+    inFirstPerson = false;
+    firstPersonControls.enabled = false;
+    controls.enable = true;    
+}
 
 // --------------------- Event Handlers ---------------------------
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    firstPersonCamera.aspect = window.innerWidth / window.innerHeight;
+    firstPersonCamera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
+
+    SCREEN_WIDTH = window.innerWidth,
+    SCREEN_HEIGHT = window.innerHeight,
+    SCREEN_WIDTH_HALF = SCREEN_WIDTH  / 2,
+    SCREEN_HEIGHT_HALF = SCREEN_HEIGHT / 2;
 }
 
 function onKeyDown( event ) {
     switch( event.keyCode ) {
-        case 16: 
+        case 16: // shift -- attempt to select a ship
             isShiftDown = true; 
             controls.enabled = false;
+            selectBoid = boids_xwing[0];
+            break;
+        case 82: // r -- select a random boid
+            if (!inFirstPerson) {
+                selectBoid = boids_xwing[Math.floor(Math.random() * boids_xwing.length)];
+                scene.add(selectSphereMesh);
+            }
+            break;
+        case 87: // w -- enter first person mode with the selected boid
+            if (selectBoid !== undefined) {
+                console.log('entering first person');
+                controls.enabled = false
+                firstPersonControls.enabled = true;
+                firstPersonControls.getObject().position.copy(selectBoid.position);
+                inFirstPerson = true;
+                scene.remove(selectSphereMesh);
+            }
+            else {
+                console.log('cannot enter first person without a boid selected');
+            }
+            break;
+        case 81: // q -- exit first person mode if you're in it
+            if (inFirstPerson) {
+                exitFirstPerson();
+            }
+            break;
+        case 88: // x -- fire all xwings
+            for (var i = 0, il = boids_xwing.length; i < il; i++) {
+                init_bullet_obj(boids_xwing[i], 
+                                bullets_xwing, 
+                                bullet_meshs_xwing, 
+                                bullet_xwing_color);
+            }
+            break;
+        case 84: // t -- fire all ties
+            for (var i = 0, il = boids_tie.length; i < il; i++) {
+                init_bullet_obj(boids_tie[i], 
+                                bullets_tie, 
+                                bullet_meshs_tie, 
+                                bullet_tie_color);
+            }
+            break;
+        case 32: // " " -- fire first person ship
+            if (inFirstPerson)
+                init_bullet_obj(selectBoid, 
+                                bullets_xwing, 
+                                bullet_meshs_xwing, 
+                                bullet_xwing_color);
             break;
     }
 }
@@ -505,7 +550,6 @@ function onLeftClick(e) {
         raycaster.setFromCamera( mouse, camera );
 
         // calculate objects intersecting the picking ray
-        //console.log(scene.children);
         var intersects = raycaster.intersectObjects( birds_xwing );
         console.log(intersects.length);
         var min_dist = Infinity;
@@ -518,47 +562,11 @@ function onLeftClick(e) {
         }
         if (min_boid !== undefined) {
             selectBoid = min_boid;
-            console.log('selected');
             selectSphereMesh.position.copy(selectBoid.position);
             scene.add(selectSphereMesh);
-        }
-        // var intersects = raycaster.intersectObjects( birds_tie );
-        // console.log(intersects.length);
-        // for ( var i = 0; i < intersects.length; i++ ) {
-        //     console.log(intersects[i]);
-        //     intersects[ i ].object.material.color.set( 0xffffff );
-
-        // }
-    }
-    else {
-        for (var i = 0, il = boids_xwing.length; i < il; i++) {
-            // bullet = boids_xwing[i].fireBullet();
-            // if (bullet !== undefined) {
-            //     bullets_xwing.push(bullet);
-            //     var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-            //     var material = new THREE.MeshBasicMaterial( { color: 0xff4500 } );
-            //     bullet_mesh = new THREE.Mesh( geometry, material );
-            //     bullet_mesh.position.copy(bullet.position);
-            //     scene.add( bullet_mesh );
-            //     bullet_meshs_xwing.push(bullet_mesh)
-            // }
-            init_bullet_obj(boids_xwing[i], bullets_xwing, bullet_meshs_xwing, bullet_xwing_color);
         }
     }
 }
 
 function onRightClick() {
-    for (var i = 0, il = boids_tie.length; i < il; i++) {
-        // bullet = boids_tie[i].fireBullet();
-        // if (bullet !== undefined) {
-        //     bullets_tie.push(bullet);
-        //     var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        //     var material = new THREE.MeshBasicMaterial( { color: 0x00ff45 } );
-        //     bullet_mesh = new THREE.Mesh( geometry, material );
-        //     bullet_mesh.position.copy(bullet.position);
-        //     scene.add( bullet_mesh );
-        //     bullet_meshs_tie.push(bullet_mesh)
-        // }
-        init_bullet_obj(boids_tie[i], bullets_tie, bullet_meshs_tie, bullet_tie_color);
-    }
 }
