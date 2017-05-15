@@ -353,6 +353,8 @@ function init() {
     window.addEventListener('resize', onWindowResize, false );
     window.addEventListener('click', onLeftClick, true); 
     window.addEventListener('contextmenu', onRightClick, false);
+    window.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('keyup', onKeyUp, true);
 
     // For selecting units
     raycaster = new THREE.Raycaster();
@@ -388,6 +390,21 @@ function onWindowResize() {
     renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
+function onKeyDown(e) {
+    if (e.shiftKey) {
+        // disable rotation
+        controls.enabled = false;
+    }
+}
+
+function onKeyUp(e) {
+    // 16 is key code for shift key
+    if (e.keyCode == 16) {
+        // renable rotation
+        controls.enabled = true;
+    }
+}
+
 function onLeftClick(e) {
     if (e.shiftKey) {
         mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -412,7 +429,6 @@ function onLeftClick(e) {
             intersects[ i ].object.material.color.set( 0xffffff );
 
         }
-        
     }
     else {
         for (var i = 0, il = boids_xwing.length; i < il; i++) {
