@@ -10,7 +10,7 @@ var bird, boid;
 var birds_xwing, boids_xwing;
 var birds_tie, boids_tie;
 
-var init_count = 3;
+var init_count = 50;
 
 var bullet, bullet_mesh;
 var bullets_xwing, bullet_meshs_xwing;
@@ -23,8 +23,8 @@ const explosion_color = 0xffa500;
 var explosions;
 
 var scene_width_half = 800 * 2;
-var scene_height_half = 400 * 2;
-var scene_depth_half = 500 * 2;
+var scene_height_half = 600 * 2;
+var scene_depth_half = 400 * 2;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
                         scene_depth_half*scene_depth_half*4);
@@ -63,7 +63,7 @@ var conclude = false;
 
 var last_spawn_time;
 var spawn_more_limit = 10000;
-var spawn_count = 50;
+var spawn_count = 2;
 var max_ties = init_count * 1.2;
 
 // compatability check before starting
@@ -84,15 +84,15 @@ function init_boids_birds(boids, birds, xwing) {
         boid = boids[ i ] = new Boid();
         //boid.position.x = Math.random() * scene_width_half * 2 - scene_width_half;
         boid.position.y = Math.random() * scene_height_half * 2 - scene_height_half;
-        boid.position.z = Math.random() * scene_depth_half*2 - scene_depth_half;
+        boid.position.z = Math.random() * scene_depth_half * 2 - scene_depth_half;
         //boid.velocity.x = Math.random() * init_vel - init_vel/2.;
-        boid.velocity.y = Math.random() * init_vel - init_vel/2.;
-        boid.velocity.z = Math.random() * init_vel - init_vel/2.;
+        boid.velocity.y = (Math.random() * init_vel - init_vel/2)/2;
+        boid.velocity.z = (Math.random() * init_vel - init_vel/2)/2;
         if (xwing) {
-            boid.position.x = Math.random() * scene_width_half/4 + 3/5*scene_width_half;
+            boid.position.x = Math.random() * scene_width_half/3 + 3/5*scene_width_half;
             boid.velocity.x = -Math.random() *init_vel;
         } else {
-            boid.position.x = -(Math.random() * scene_width_half/4 + 3/5*scene_width_half);
+            boid.position.x = -(Math.random() * scene_width_half/3 + 3/5*scene_width_half);
             boid.velocity.x = Math.random() * init_vel;
         }
             
@@ -544,7 +544,7 @@ function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera( 75, 
         window.innerWidth / window.innerHeight, 1, 10000 );
-    camera.position.z = 450;
+    camera.position.z = scene_depth_half;
     
     firstPersonCamera = camera.clone();
     // copyCamera(camera, firstPersonCamera);
@@ -552,7 +552,7 @@ function init() {
 
     worldCamera = camera.clone();
     // copyCamera(camera, worldCamera);
-    worldCamera.position.copy(new THREE.Vector3(0, 0, 450));
+    worldCamera.position.copy(new THREE.Vector3(0, 0, scene_depth_half));
 
     // initialize lights
     // var dirLight = new THREE.DirectionalLight(0xffffff, 1);
