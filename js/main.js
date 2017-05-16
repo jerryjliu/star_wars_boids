@@ -10,7 +10,7 @@ var bird, boid;
 var birds_xwing, boids_xwing;
 var birds_tie, boids_tie;
 
-var init_count = 50;
+var init_count = 100;
 
 var bullet, bullet_mesh;
 var bullets_xwing, bullet_meshs_xwing;
@@ -22,9 +22,9 @@ const explosion_color = 0xffa500;
 
 var explosions;
 
-var scene_width_half = 800 * 2;
+var scene_width_half = 700 * 2;
 var scene_height_half = 600 * 2;
-var scene_depth_half = 400 * 2;
+var scene_depth_half = 350 * 2;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
                         scene_depth_half*scene_depth_half*4);
@@ -648,8 +648,6 @@ function init() {
     firstPersonControls.enabled = false;
     scene.add( firstPersonControls.getObject() );
     var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
-
-    last_spawn_time = Date.now();
 }
 
 function initSplashScreen() {
@@ -687,7 +685,7 @@ function initializeGame() {
     }
     if (sd_boid !== undefined)
         sd_boid.active = true; 
-
+    last_spawn_time = Date.now();
     console.log("hello");
     document.getElementById("xwingdiv").style.visibility = "visible";
     document.getElementById("tiediv").style.visibility = "visible";
@@ -829,7 +827,7 @@ function initText() {
 
 function render() {
     var now = Date.now();
-    if (sd_boid !== undefined && 
+    if (sd_boid !== undefined && last_spawn_time !== undefined &&
         now - last_spawn_time > spawn_more_limit && 
         boids_tie.length < max_ties && sd_boid.active) {
         last_spawn_time = now;
