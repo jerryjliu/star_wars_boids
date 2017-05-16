@@ -10,7 +10,7 @@ var bird, boid;
 var birds_xwing, boids_xwing;
 var birds_tie, boids_tie;
 
-var init_count = 50;
+var init_count = 3;
 
 var bullet, bullet_mesh;
 var bullets_xwing, bullet_meshs_xwing;
@@ -63,7 +63,7 @@ var conclude = false;
 
 var last_spawn_time;
 var spawn_more_limit = 10000;
-var spawn_count = 2;
+var spawn_count = 50;
 var max_ties = init_count * 1.2;
 
 // compatability check before starting
@@ -599,12 +599,11 @@ function init() {
     initText();
 
     window.addEventListener('resize', onWindowResize, false );
-    window.addEventListener('click', onLeftClick, true); 
-    window.addEventListener('contextmenu', onRightClick, false);
-    window.addEventListener('keydown', onKeyDown, true);
-    window.addEventListener('keyup', onKeyUp, true);
-
     document.getElementById("beginButton").addEventListener("click", function() {
+        window.addEventListener('click', onLeftClick, true); 
+        window.addEventListener('contextmenu', onRightClick, false);
+        window.addEventListener('keydown', onKeyDown, true);
+        window.addEventListener('keyup', onKeyUp, true);
         console.log('hi0');
         initializeGame();
     });
@@ -663,6 +662,7 @@ function initializeGame() {
     document.getElementById("xwingdiv").style.visibility = "visible";
     document.getElementById("tiediv").style.visibility = "visible";
     document.getElementById("titlediv").style.visibility = "hidden";
+    document.getElementById("starDestroyerHPDiv").style.visibility = "visible";
 }
 
 function concludeGame(winner) {
@@ -844,9 +844,6 @@ function render() {
             document.getElementById("killedcount").innerHTML = selectBoid.enemiesKilled;
         } else {
             document.getElementById("killedDiv").style.visibility = "hidden";
-        }
-        if (sd_boid === undefined || sd_boid.active){
-            document.getElementById("starDestroyerHPDiv").style.visibility = "visible";
         }
 
         if (selectBoid !== undefined) {
