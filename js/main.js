@@ -80,7 +80,12 @@ if (Detector.webgl) {
 // parameter for whether to use Xwing (true) or Tie (false) constructors for the 
 // meshs
 function init_boids_birds(boids, birds, xwing) {
-    for ( var i = 0; i < init_count; i ++ ) {
+    var total = init_count;
+    if (xwing)
+        total *= 1.1;
+    console.log(total);
+
+    for ( var i = 0; i < total; i ++ ) {
         boid = boids[ i ] = new Boid();
         //boid.position.x = Math.random() * scene_width_half * 2 - scene_width_half;
         boid.position.y = Math.random() * scene_height_half * 2 - scene_height_half;
@@ -772,7 +777,7 @@ function initText() {
     div1.style.visibility = "hidden";
 
     var count1 = document.createElement('p');
-    count1.innerHTML = "" + init_count;
+    count1.innerHTML = "" + boids_xwing.length;
     count1.id = "xwingcount";
     div1.appendChild(count1);
 
@@ -792,7 +797,7 @@ function initText() {
     div2.style.visibility = "hidden";
 
     var count2 = document.createElement('p');
-    count2.innerHTML = "" + init_count;
+    count2.innerHTML = "" + boids_tie.length;
     count2.id = "tiecount";
     div2.appendChild(count2);
 
