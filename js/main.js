@@ -56,6 +56,11 @@ var sd_boid;
 // game has concluded
 var conclude = false;
 
+var last_spawn_time;
+var spawn_more_limit = 10000;
+var spawn_count = 2;
+var max_ties = init_count * 1.2;
+
 // compatability check before starting
 if (Detector.webgl) {
     init();
@@ -80,6 +85,7 @@ function init_boids_birds(boids, birds, xwing) {
         boid.velocity.z = Math.random() * init_vel - init_vel/2.;
         if (xwing) {
             boid.position.x = Math.random() * scene_width_half/4 + 3/5*scene_width_half;
+            boid.velocity.x = -Math.random() *init_vel;
         } else {
             boid.position.x = -(Math.random() * scene_width_half/4 + 3/5*scene_width_half);
             boid.velocity.x = Math.random() * init_vel;
@@ -412,6 +418,42 @@ function enter_dead_state() {
     }
 }
 
+
+function spawn_more_ties(count) {
+    var local_spawn_coords = new THREE.Vector4(-200, -60, 0, 1);
+    local_spawn_coords.applyMatrix4(sd.matrixWorld);
+    var world_spawn_coords = new THREE.Vector3(local_spawn_coords.x, 
+                                        local_spawn_coords.y, 
+                                        local_spawn_coords.z);
+    var direction = sd_boid.velocity.clone().normalize().multiplyScalar(-8);
+    for (var i = 0; i < count; i++) {
+        var boid = new Boid();
+
+        boid.position.x = (Math.random() + 0.2) * direction.x + world_spawn_coords.x;
+        boid.position.y = (Math.random() + 0.2) * direction.y + world_spawn_coords.y;
+        boid.position.z = (Math.random() + 0.2) * direction.z + world_spawn_coords.z;
+        boid.velocity.x = (Math.random() + 0.2) * direction.x;
+        boid.velocity.y = (Math.random() + 0.2) * direction.y;
+        boid.velocity.z = (Math.random() + 0.2) * direction.z;
+            
+        boid.setAvoidWalls( true );
+        boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
+        boid.setMaxSpeed(init_vel);
+        boid.setAvoidStarDestroyer( true );
+
+        var material = new THREE.MeshPhongMaterial( {color: 0x808080, side: THREE.DoubleSide });
+        material.map  = THREE.ImageUtils.loadTexture('../images/tie2.png');
+        var bird = new THREE.Mesh( new Tie(), material);
+        boid.type = 'tie';
+        bird.scale.set(2,2,2);
+        bird.phase = Math.floor( Math.random() * 62.83 );
+        scene.add( bird );
+        birds_tie.push(bird);
+        boids_tie.push(boid);
+        document.getElementById('tiecount').innerHTML = "" + (boids_tie.length - 1);
+    }
+}
+
 // ------------ Main Initializer and Renderer Loop -----------------
 function init() {
     scene = new THREE.Scene();
@@ -489,6 +531,8 @@ function init() {
     firstPersonControls.enabled = false;
     scene.add( firstPersonControls.getObject() );
     var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+
+    last_spawn_time = Date.now();
 }
 
 function initSplashScreen() {
@@ -645,6 +689,12 @@ function initText() {
 
 
 function render() {
+    var now = Date.now();
+    if (now - last_spawn_time > spawn_more_limit && boids_tie.length < max_ties){
+        last_spawn_time = now;
+        spawn_more_ties(spawn_count);
+    }
+
     if (inFirstPerson) {
         current_camera = firstPersonCamera;
     } else {
