@@ -41,7 +41,9 @@ var selectBoid;
 var firstPersonControls;
 var inFirstPerson = false;
 var raycaster, mouse;
-var worldCameraPosition = new THREE.Vector3();
+
+var worldCamera;
+var firstPersonCamera;
 
 // Star Destroyer
 var sd;
@@ -134,8 +136,8 @@ function init_star_destroyer() {
     scene.add( sd );
     sd_boid = new StarDestroyerBoid();
     sd_boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
-    sd_boid.position.set(0, 0, 0);
-    sd_boid.velocity.set(Math.random(), Math.random(), Math.random());
+    sd_boid.position.set(-(Math.random() * scene_width_half/4 + 3/5*scene_width_half), 0, 0);
+    sd_boid.velocity.set(Math.random() + 2, (Math.random()-0.5)*0.2, (Math.random()-0.5)*0.2);
     sd_boid.updateGeoWithMesh(sd);
     // console.log(sd);
 }
@@ -163,9 +165,7 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
         if (boid.collided) {
             var collide_pos = boid.position.clone();
             var collide_vel = boid.velocity.clone().normalize().multiplyScalar(-1);
-            scene.remove(birds[i]);
-            boids.splice(i, 1);
-            birds.splice(i, 1);
+            removeBoidBird(i, boids, birds);
             console.log('count: ' + boids.length);
             var explosion = create_explosion(collide_pos, collide_vel);
             explosions.push(explosion);
@@ -230,17 +230,7 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
                 } else if (boids[collision_i].type == 'tie') {
                     document.getElementById('tiecount').innerHTML = "" + (boids.length - 1);
                 }
-                scene.remove(birds[collision_i]);
-                if (boids[collision_i] == selectBoid) {
-                    if (inFirstPerson) {
-                        exitFirstPerson();
-                    } else {
-                        selectBoid = undefined;
-                        scene.remove( selectSphereMesh );
-                    }
-                }
-                boids.splice(collision_i, 1);
-                birds.splice(collision_i, 1);
+                removeBoidBird(collision_i, boids, birds);
                 console.log('count: ' + boids.length);
                 var explosion = create_explosion(collide_pos, collide_vel);
                 explosions.push(explosion);
@@ -389,12 +379,35 @@ function add_boundaries(scene) {
     scene.add( line );
 }
 
+function removeBoidBird(i, boids, birds) {
+    scene.remove(birds[i]);
+    if (boids[i] == selectBoid) {
+        if (inFirstPerson) {
+            exitFirstPerson();
+        } else {
+            selectBoid = undefined;
+            scene.remove( selectSphereMesh );
+        }
+    }
+    boids.splice(i, 1);
+    birds.splice(i, 1);
+}
+
 // ------------ Main Initializer and Renderer Loop -----------------
 function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera( 75, 
         window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.z = 450;
+    console.log(camera);
+    
+    firstPersonCamera = camera.clone();
+    copyCamera(camera, firstPersonCamera);
+    firstPersonCamera.position.z = 50;
+
+    worldCamera = camera.clone();
+    copyCamera(camera, worldCamera);
+    worldCamera.position.copy(new THREE.Vector3(0, 0, 450));
 
     // initialize lights
     // var dirLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -668,21 +681,45 @@ function exitFirstPerson() {
     inFirstPerson = false;
     firstPersonControls.enabled = false;
     controls.enabled = true;   
-    camera.position.copy(worldCameraPosition);
+    copyCamera( worldCamera, camera );
+    camera.position.copy(camera.position.normalize().multiplyScalar(450));
 }
 
 // --------------------- Event Handlers ---------------------------
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    // firstPersonCamera.aspect = window.innerWidth / window.innerHeight;
-    // firstPersonCamera.updateProjectionMatrix();
+    firstPersonCamera.aspect = window.innerWidth / window.innerHeight;
+    firstPersonCamera.updateProjectionMatrix();
+    worldCamera.aspect = window.innerWidth / window.innerHeight;
+    worldCamera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
 
     SCREEN_WIDTH = window.innerWidth,
     SCREEN_HEIGHT = window.innerHeight,
     SCREEN_WIDTH_HALF = SCREEN_WIDTH  / 2,
     SCREEN_HEIGHT_HALF = SCREEN_HEIGHT / 2;
+}
+
+function copyCamera(src, dst) {
+    console.log('src', src);
+    console.log('dst', dst);
+    dst.matrix.copy(src.matrix.clone());
+    dst.matrixWorld.copy(src.matrixWorld.clone());
+    dst.matrixWorldInverse.copy(src.matrixWorldInverse.clone());
+    dst.position.copy(src.position.clone());
+    dst.projectionMatrix.copy(src.projectionMatrix.clone());
+    dst.quaternion.copy(src.quaternion.clone());
+    dst.rotation.copy(src.rotation.clone());
+    dst.scale.copy(src.scale.clone());
+    dst.up.copy(src.up.clone());
+    // dst.parent.copy(src.parent);
+    // dst.userData = src.userData.clone();
+    dst.modelViewMatrix.copy(src.modelViewMatrix.clone());
+    dst.normalMatrix.copy(src.normalMatrix.clone());
+    dst.updateProjectionMatrix();
+    console.log('after copy src', src);
+    console.log('after copy dst', dst);
 }
 
 function onKeyDown( event ) {
@@ -705,8 +742,8 @@ function onKeyDown( event ) {
                 firstPersonControls.enabled = true;
                 firstPersonControls.getObject().position.copy(selectBoid.position);
                 inFirstPerson = true;
-                worldCameraPosition.copy(camera.position);
-                camera.position.z = 50;
+                copyCamera( camera, worldCamera );
+                copyCamera( firstPersonCamera, camera );
                 scene.remove(selectSphereMesh);
             }
             else {
