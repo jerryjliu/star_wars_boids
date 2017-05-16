@@ -686,7 +686,7 @@ var StarDestroyerBoid = function () {
     this.triangles = [];
     this.effective_distance = 10;
 
-    this.hp = 2;
+    this.hp = 100;
 
     this.position = new THREE.Vector3();
     this.velocity = new THREE.Vector3();

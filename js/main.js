@@ -281,9 +281,11 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
             if (collision_i == sd_boid) {
                 sd_boid.hp -= 1;
                 document.getElementById('StarDestroyerHP').innerHTML = "" + (sd_boid.hp);
+                var collide_pos = bullet.position.clone();
+                var collide_vel = bullet.velocity.clone();
+                var explosion = create_explosion(collide_pos, collide_vel, 75, 50, 4);
+                explosions.push(explosion);
                 if (sd_boid.hp <= 0) {
-                    var collide_pos = bullet.position.clone();
-                    var collide_vel = bullet.velocity.clone();
                     console.log("STAR DESTROYER DESTROYED");
                     sd.updateMatrixWorld();
                     console.log(sd.geometry);
