@@ -22,9 +22,9 @@ const explosion_color = 0xffa500;
 
 var explosions;
 
-var scene_width_half = 800;
-var scene_height_half = 400;
-var scene_depth_half = 500;
+var scene_width_half = 800 * 2;
+var scene_height_half = 400 * 2;
+var scene_depth_half = 500 * 2;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
                         scene_depth_half*scene_depth_half*4);
@@ -756,7 +756,7 @@ function initText() {
 
 function render() {
     var now = Date.now();
-    if (now - last_spawn_time > spawn_more_limit && boids_tie.length < max_ties){
+    if (now - last_spawn_time > spawn_more_limit && boids_tie.length < max_ties && sd_boid.active){
         last_spawn_time = now;
         spawn_more_ties(spawn_count);
     }
