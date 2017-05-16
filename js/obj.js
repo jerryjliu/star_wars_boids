@@ -198,7 +198,7 @@ var Boid = function() {
     var rotate = function(v, k) {
         var vnew = v.clone().multiplyScalar(cos_radians);
         vnew.add(v.cross(k).multiplyScalar(sin_radians));
-        vnew.add(k.clone().multiplyScalar(k.dot(v) * 1 - cos_radians));
+        //vnew.add(k.clone().multiplyScalar(k.dot(v) * 1 - cos_radians));
         return vnew;
     }
 
@@ -647,17 +647,17 @@ var Explosion = function(init_position, num_particles, init_vel) {
 var StarDestroyerBoid = function () {
     this.bounding_box = new THREE.Box3();
     this.triangles = [];
-    this.effective_distance = 0;
+    this.effective_distance = 10;
 
     this.position = new THREE.Vector3();
     this.velocity = new THREE.Vector3();
 
-    var _maxSpeed = 0.5;
+    var _maxSpeed = 1;
 
     var vector = new THREE.Vector3();
     var _acceleration = new THREE.Vector3();
     var _avoidWalls = true;
-    var _avoid_accel_scaling = 30*_maxSpeed;
+    var _avoid_accel_scaling = 2.5 * _maxSpeed;
 
     var _face;
     var _triangle;
@@ -665,7 +665,7 @@ var StarDestroyerBoid = function () {
 
     var _width, _height, _depth;
 
-    var radians, cos_radians, sin_radians, max_turn_angle = 1;
+    var radians, cos_radians, sin_radians, max_turn_angle = 2;
     radians = max_turn_angle*Math.PI/180;
     cos_radians = Math.cos(radians);
     sin_radians = Math.sin(radians);
@@ -680,27 +680,27 @@ var StarDestroyerBoid = function () {
         if ( _avoidWalls ) {
             vector.set( - _width, this.position.y, this.position.z );
             vector = this.avoid( vector );
-            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.x + _width));
+            vector.multiplyScalar( _avoid_accel_scaling );
             _acceleration.add( vector );
             vector.set( _width, this.position.y, this.position.z );
             vector = this.avoid( vector );
-            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.x - _width));
+            vector.multiplyScalar( _avoid_accel_scaling );
             _acceleration.add( vector );
             vector.set( this.position.x, - _height, this.position.z );
             vector = this.avoid( vector );
-            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.y + _height));
+            vector.multiplyScalar( _avoid_accel_scaling );
             _acceleration.add( vector );
             vector.set( this.position.x, _height, this.position.z );
             vector = this.avoid( vector );
-            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.y - _height));
+            vector.multiplyScalar( _avoid_accel_scaling );
             _acceleration.add( vector );
             vector.set( this.position.x, this.position.y, - _depth );
             vector = this.avoid( vector );
-            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.z + _depth));
+            vector.multiplyScalar( _avoid_accel_scaling );
             _acceleration.add( vector );
             vector.set( this.position.x, this.position.y, _depth );
             vector = this.avoid( vector );
-            vector.multiplyScalar( _avoid_accel_scaling / Math.abs(this.position.z - _depth));
+            vector.multiplyScalar( _avoid_accel_scaling );
             _acceleration.add( vector );
         }
         this.move();
@@ -710,6 +710,9 @@ var StarDestroyerBoid = function () {
         var steer = new THREE.Vector3();
         steer.copy( this.position );
         steer.sub( target );
+        if (steer.length() < target.length()/3) {
+            return steer.set(0,0,0);
+        }
         steer.multiplyScalar( 1 / this.position.distanceToSquared( target ) );
         return steer;
     };
@@ -719,9 +722,10 @@ var StarDestroyerBoid = function () {
     // v is vector to be rotate
     // theta is how much to rotate (in radians)
     var rotate = function(v, k) {
-        var vnew = v.clone().multiplyScalar(cos_radians);
-        vnew.add(v.cross(k).multiplyScalar(sin_radians));
-        vnew.add(k.clone().multiplyScalar(k.dot(v) * 1 - cos_radians));
+        var vnew = new THREE.Vector3();
+        vnew.copy(v).multiplyScalar(cos_radians);
+        vnew.add(v.clone().cross(k).multiplyScalar(sin_radians));
+        // vnew.add(k.clone().multiplyScalar(k.dot(v) * 1 - cos_radians));
         return vnew;
     };
 
@@ -733,17 +737,21 @@ var StarDestroyerBoid = function () {
         var dot = this.velocity.dot(old_velocity);
 
         if (dot == -1) {
-            this.velocity.x = Math.random() - 0.5;
-            this.velocity.y = Math.random() - 0.5;
-            this.velocity.z = Math.random() - 0.5;
+            this.velocity.x = Math.random();
+            this.velocity.y = Math.random();
+            this.velocity.z = Math.random();
             this.velocity.normalize();
             dot = this.velocity.dot(old_velocity);
         } 
         if (dot < cos_radians) {
-            var axis = old_velocity.cross(this.velocity);
+            var axis = old_velocity.clone().cross(this.velocity);
             this.velocity = rotate(old_velocity, axis);
+            console.log(Math.acos(this.velocity.dot(old_velocity)));
+            _acceleration.add(this.velocity);
+        } else {
+            _acceleration.set( 0, 0, 0 );
         }
-        _acceleration.set( 0, 0, 0 );
+        
         this.velocity.multiplyScalar(l);
         if ( l > _maxSpeed ) {
             this.velocity.divideScalar( l / _maxSpeed );
