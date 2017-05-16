@@ -904,7 +904,7 @@ function initText() {
     div5.style.height = 100;
     div5.style.backgroundColor = "transparent";
     div5.style.color = "white";
-    div5.innerHTML = "R to get an X-wing. W to fly X-wing. SPACE to shoot X-wing. Q to leave X-wing. Win by eliminating all TIEs.";
+    div5.innerHTML = "R to get an X-wing. W to fly X-wing. Mouse to turn X-wing. SPACE to shoot. Q to leave X-wing. Win by eliminating all TIEs.";
     // div5.style.top = (window.innerHeight/20) + 'px';
     div5.style.left = (window.innerWidth/20) + 'px';
     div5.style.top = (window.innerHeight - Math.max(window.innerHeight/8, 40)) + 'px';
