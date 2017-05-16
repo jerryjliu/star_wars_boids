@@ -22,9 +22,9 @@ const explosion_color = 0xffa500;
 
 var explosions;
 
-var scene_width_half = 800 * 2;
-var scene_height_half = 400 * 2;
-var scene_depth_half = 350 * 2;
+var scene_width_half = 700 * 2;
+var scene_height_half = 450 * 2;
+var scene_depth_half = 450 * 2;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
                         scene_depth_half*scene_depth_half*4);
@@ -152,8 +152,8 @@ function init_star_destroyer() {
     sd_boid = new StarDestroyerBoid();
     sd_boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
     sd_boid.position.set(-(Math.random() * scene_width_half/4 + 3/5*scene_width_half), 
-                            Math.random() * scene_height_half - scene_height_half/2, 
-                            Math.random() * scene_depth_half - scene_depth_half/2);
+                            (Math.random() - 0.5)* scene_height_half /3, 
+                            (Math.random() - 0.5)* scene_depth_half /3);
     sd_boid.velocity.set(Math.random() + 2, (Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5);
     sd_boid.updateGeoWithMesh(sd);
     // console.log(sd);
