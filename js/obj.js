@@ -793,10 +793,12 @@ var StarDestroyerBoid = function () {
         var steer = new THREE.Vector3();
         steer.copy( this.position );
         steer.sub( target );
-        if (steer.length() > target.length()/3) {
+        var dist = this.position.distanceToSquared( target );
+        var limit = _width*_width + _height*_height + _depth * _depth;
+        if (dist > limit/5) {
             return steer.set(0,0,0);
         }
-        steer.multiplyScalar( 1 / this.position.distanceToSquared( target ) );
+        steer.multiplyScalar( 1 / dist);
         return steer;
     };
 
