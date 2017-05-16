@@ -420,29 +420,29 @@ function init_bullet_obj(owner, bullet_arr, bullet_mesh_arr, color, force_fire=f
         bullet = owner.fireBullet();
     }
 
-    // if bullet is close enough to camera make sound
-    var distToCamera;
-    if (inFirstPerson) {
-        distToCamera = bullet.position.clone().distanceTo(selectBoid.position);
-    } else {
-        distToCamera = bullet.position.clone().distanceTo(worldCamera.position);
-    }
-    var now = Date.now();
-    if (distToCamera < 300 && now - lastLaserTime > 20) {
-        // console.log(distToCamera);
-        // console.log(owner.type);
-        laserAudio = document.createElement('AUDIO');
-        laserAudio.setAttribute('src', 'audio/laser.mp3');
-        laserAudio.loop = false;
-        laserAudio.currentTime = 0;
-        laserAudio.volume = 0.02 / (1 + (distToCamera * 0.02));
-        document.body.appendChild(laserAudio);
-        laserAudio.play();
-        laserAudios.push(laserAudio);
-        lastLaserTime = now;
-    }
-
     if (bullet !== undefined) {
+        // if bullet is close enough to camera make sound
+        var distToCamera = Number.MAX_VALUE;
+        if (inFirstPerson) {
+            distToCamera = bullet.position.clone().distanceTo(selectBoid.position);
+        } else if (!inFirstPerson) {
+            distToCamera = bullet.position.clone().distanceTo(worldCamera.position);
+        }
+        var now = Date.now();
+        if (distToCamera < 300 && now - lastLaserTime > 20) {
+            // console.log(distToCamera);
+            // console.log(owner.type);
+            laserAudio = document.createElement('AUDIO');
+            laserAudio.setAttribute('src', 'audio/laser.mp3');
+            laserAudio.loop = false;
+            laserAudio.currentTime = 0;
+            laserAudio.volume = 0.02 / (1 + (distToCamera * 0.02));
+            document.body.appendChild(laserAudio);
+            laserAudio.play();
+            laserAudios.push(laserAudio);
+            lastLaserTime = now;
+        }
+
         bullet_arr.push(bullet);
         var geometry = new THREE.BoxGeometry( 1, 1, 1 );
         var material = new THREE.MeshBasicMaterial( { color: color } );
