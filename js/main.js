@@ -61,6 +61,12 @@ var bullets_sd, bullet_meshs_sd;
 // game has concluded
 var conclude = false;
 
+// Audio
+var mainAudio; // background track
+var laserAudios;
+var laserAudio; // laser sounds
+var lastLaserTime = 0;
+
 var last_spawn_time;
 var spawn_more_limit = 12000; // time in ms between tie spawns
 var spawn_count = 3;
@@ -413,6 +419,29 @@ function init_bullet_obj(owner, bullet_arr, bullet_mesh_arr, color, force_fire=f
     else {
         bullet = owner.fireBullet();
     }
+
+    // if bullet is close enough to camera make sound
+    var distToCamera;
+    if (inFirstPerson) {
+        distToCamera = bullet.position.clone().distanceTo(selectBoid.position);
+    } else {
+        distToCamera = bullet.position.clone().distanceTo(worldCamera.position);
+    }
+    var now = Date.now();
+    if (distToCamera < 300 && now - lastLaserTime > 20) {
+        // console.log(distToCamera);
+        // console.log(owner.type);
+        laserAudio = document.createElement('AUDIO');
+        laserAudio.setAttribute('src', 'audio/laser.mp3');
+        laserAudio.loop = false;
+        laserAudio.currentTime = 0;
+        laserAudio.volume = 0.02 / (1 + (distToCamera * 0.02));
+        document.body.appendChild(laserAudio);
+        laserAudio.play();
+        laserAudios.push(laserAudio);
+        lastLaserTime = now;
+    }
+
     if (bullet !== undefined) {
         bullet_arr.push(bullet);
         var geometry = new THREE.BoxGeometry( 1, 1, 1 );
@@ -621,6 +650,21 @@ function init() {
 
     explosions = [];
 
+    laserAudios = [];
+
+    // initialize Audio
+    mainAudio = document.createElement('AUDIO');
+    mainAudio.setAttribute('src', 'audio/open.mp3');
+    mainAudio.loop = true;
+    mainAudio.autoplay = "autoplay";
+    console.log(mainAudio);
+    document.body.appendChild(mainAudio);
+    laserAudio = document.createElement('AUDIO');
+    laserAudio.setAttribute('src', 'audio/laser.mp3');
+    laserAudio.loop = false;
+    laserAudio.volume = 0.03;
+    document.body.appendChild(laserAudio);
+
     init_boids_birds(boids_xwing, birds_xwing, true);
     init_boids_birds(boids_tie, birds_tie, false);
     init_star_destroyer();
@@ -703,6 +747,11 @@ function initializeGame() {
     document.getElementById("tiediv").style.visibility = "visible";
     document.getElementById("titlediv").style.visibility = "hidden";
     document.getElementById("starDestroyerHPDiv").style.visibility = "visible";
+
+    // set different audio
+    mainAudio.setAttribute('src', 'audio/battle.mp3');
+    mainAudio.volume = 0.3;
+
 }
 
 function concludeGame(winner) {
@@ -715,13 +764,22 @@ function concludeGame(winner) {
     var winText = "";
     if (winner == 'xwing') {
         winText = "The Rebels have won and defeated the Empire!";
+        mainAudio.setAttribute('src', 'audio/rebel_victory.mp3');
+        mainAudio.autoplay = true;
+        mainAudio.loop = false;
     } else if (winner == 'tie') {
         winText = "The Empire has won and eliminated all opposition";
+        mainAudio.setAttribute('src', 'audio/imperial_victory.mp3');
+        mainAudio.autoplay = true;
+        mainAudio.loop = false;
     }
     console.log(document.getElementById("killedDiv").style.visibility);
     document.getElementById("titletext").innerHTML = winText;
     document.getElementById("beginButton").innerHTML = "Restart";
     document.getElementById("beginButton").addEventListener("click", function() {
+        mainAudio.paused = true;
+        mainAudio.parentNode.removeChild(mainAudio);
+
         // boids_xwing = [];
         // boids_tie = [];
         // bullets_xwing = [];
@@ -755,7 +813,7 @@ function concludeGame(winner) {
         // }
         // conclude = false;
 
-        location.reload();
+        window.location.reload(true);
     });
 
 }
@@ -882,6 +940,15 @@ function render() {
 
     if (in_dead_state) {
         enter_dead_state();
+    }
+
+    // process audio
+    for(var i = 0; i < laserAudios.length; i++) {
+        if (laserAudios[i].ended) {
+            document.body.removeChild(laserAudios[i]);
+            laserAudios.splice(i, 1);
+            console.log('removing audio');
+        }
     }
 
     if (!conclude) {
