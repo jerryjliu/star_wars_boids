@@ -44,6 +44,10 @@ var raycaster, mouse;
 
 var worldCamera;
 var firstPersonCamera;
+var current_camera;
+
+var in_dead_state = false;
+var dead_time;
 
 // Star Destroyer
 var sd;
@@ -56,6 +60,11 @@ var bullets_sd, bullet_meshs_sd;
 
 // game has concluded
 var conclude = false;
+
+var last_spawn_time;
+var spawn_more_limit = 10000;
+var spawn_count = 2;
+var max_ties = init_count * 1.2;
 
 // compatability check before starting
 if (Detector.webgl) {
@@ -81,6 +90,7 @@ function init_boids_birds(boids, birds, xwing) {
         boid.velocity.z = Math.random() * init_vel - init_vel/2.;
         if (xwing) {
             boid.position.x = Math.random() * scene_width_half/4 + 3/5*scene_width_half;
+            boid.velocity.x = -Math.random() *init_vel;
         } else {
             boid.position.x = -(Math.random() * scene_width_half/4 + 3/5*scene_width_half);
             boid.velocity.x = Math.random() * init_vel;
@@ -162,10 +172,7 @@ function update_boid_mesh(boid, mesh) {
     mesh.rotation.z = Math.asin( boid.velocity.y / boid.velocity.length() );
     mesh.position.copy(boid.position);
     color = mesh.material.color;
-    color.r = color.g = color.b = Math.max((camera.position.clone().sub(mesh.position)).length() / diagonal, 0.35);
-
-    
-
+    color.r = color.g = color.b = Math.max((current_camera.position.clone().sub(mesh.position)).length() / diagonal, 0.35);
 }
 
 function update_turret(sd_boid, sd, turret, turret_loc_pos) {
@@ -199,7 +206,6 @@ function update_turret(sd_boid, sd, turret, turret_loc_pos) {
             init_bullet_obj_sd(sd_boid, turret, fireVelocity, bullets_sd, bullet_meshs_sd, bullet_tie_color);
         }
     }
-    
 }
 
 // Update the locations of the boids and corresponding birds (meshs) by calling
@@ -208,14 +214,14 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
     for ( var i = 0, il = birds.length; i < il; i++ ) {
         boid = boids[ i ];
         if (boid == selectBoid && inFirstPerson) {
-            boid.forcedMove(firstPersonControls.getDirection());
+            boid.forcedMove(firstPersonControls.getDirection(), sd_boid);
         }
         else
             boid.run( boids, enemy_boids, enemy_bullets, sd_boid);
 
         if (boid.collided) {
-            var collide_pos = boid.position.clone();
-            var collide_vel = boid.velocity.clone().normalize().multiplyScalar(-1);
+            var collide_vel = boid.velocity.clone().multiplyScalar(-1);
+            var collide_pos = boid.position.clone().sub(collide_vel);
             removeBoidBird(i, boids, birds);
             console.log('count: ' + boids.length);
             var explosion = create_explosion(collide_pos, collide_vel);
@@ -228,7 +234,7 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
         bird = birds[ i ];
         bird.position.copy( boids[ i ].position );
         color = bird.material.color;
-        color.r = color.g = color.b = Math.max((camera.position.clone().sub(bird.position)).length() / diagonal, 0.2);
+        color.r = color.g = color.b = Math.max((current_camera.position.clone().sub(bird.position)).length() / diagonal, 0.2);
 
         // if (boid.pursue) {
         //     color.r = 1;
@@ -448,7 +454,8 @@ function removeBoidBird(i, boids, birds) {
     scene.remove(birds[i]);
     if (boids[i] == selectBoid) {
         if (inFirstPerson) {
-            exitFirstPerson();
+            enter_dead_state();
+            //exitFirstPerson();
         } else {
             selectBoid = undefined;
             scene.remove( selectSphereMesh );
@@ -458,20 +465,69 @@ function removeBoidBird(i, boids, birds) {
     birds.splice(i, 1);
 }
 
+function enter_dead_state() {
+    if (dead_time === undefined) {
+        dead_time = Date.now();
+    }
+    in_dead_state = true;
+    var waitTime = Date.now() - dead_time;
+    var waitLimit = 500;
+    if (waitTime > waitLimit) {
+        dead_time = undefined;
+        in_dead_state = false;
+        exitFirstPerson();
+    }
+}
+
+
+function spawn_more_ties(count) {
+    var local_spawn_coords = new THREE.Vector4(-200, -60, 0, 1);
+    local_spawn_coords.applyMatrix4(sd.matrixWorld);
+    var world_spawn_coords = new THREE.Vector3(local_spawn_coords.x, 
+                                        local_spawn_coords.y, 
+                                        local_spawn_coords.z);
+    var direction = sd_boid.velocity.clone().normalize().multiplyScalar(-8);
+    for (var i = 0; i < count; i++) {
+        var boid = new Boid();
+
+        boid.position.x = (Math.random() + 0.2) * direction.x + world_spawn_coords.x;
+        boid.position.y = (Math.random() + 0.2) * direction.y + world_spawn_coords.y;
+        boid.position.z = (Math.random() + 0.2) * direction.z + world_spawn_coords.z;
+        boid.velocity.x = (Math.random() + 0.2) * direction.x;
+        boid.velocity.y = (Math.random() + 0.2) * direction.y;
+        boid.velocity.z = (Math.random() + 0.2) * direction.z;
+            
+        boid.setAvoidWalls( true );
+        boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
+        boid.setMaxSpeed(init_vel);
+        boid.setAvoidStarDestroyer( true );
+
+        var material = new THREE.MeshPhongMaterial( {color: 0x808080, side: THREE.DoubleSide });
+        material.map  = THREE.ImageUtils.loadTexture('../images/tie2.png');
+        var bird = new THREE.Mesh( new Tie(), material);
+        boid.type = 'tie';
+        bird.scale.set(2,2,2);
+        bird.phase = Math.floor( Math.random() * 62.83 );
+        scene.add( bird );
+        birds_tie.push(bird);
+        boids_tie.push(boid);
+        document.getElementById('tiecount').innerHTML = "" + (boids_tie.length - 1);
+    }
+}
+
 // ------------ Main Initializer and Renderer Loop -----------------
 function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera( 75, 
         window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.z = 450;
-    console.log(camera);
     
     firstPersonCamera = camera.clone();
-    copyCamera(camera, firstPersonCamera);
+    // copyCamera(camera, firstPersonCamera);
     firstPersonCamera.position.z = 50;
 
     worldCamera = camera.clone();
-    copyCamera(camera, worldCamera);
+    // copyCamera(camera, worldCamera);
     worldCamera.position.copy(new THREE.Vector3(0, 0, 450));
 
     // initialize lights
@@ -511,7 +567,7 @@ function init() {
     renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
     document.body.appendChild( renderer.domElement );
 
-    controls = new THREE.OrbitControls( camera, renderer.domElement );
+    controls = new THREE.OrbitControls( worldCamera, renderer.domElement );
 
     stats = new Stats();
     document.getElementById( 'container' ).appendChild(stats.dom);
@@ -535,10 +591,12 @@ function init() {
     selectGeo = new THREE.SphereGeometry(10);
     selectMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
     selectSphereMesh = new THREE.Mesh( selectGeo, selectMaterial);
-    firstPersonControls = new THREE.PointerLockControls( camera );
+    firstPersonControls = new THREE.PointerLockControls( firstPersonCamera );
     firstPersonControls.enabled = false;
     scene.add( firstPersonControls.getObject() );
     var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+
+    last_spawn_time = Date.now();
 }
 
 function initSplashScreen() {
@@ -546,8 +604,8 @@ function initSplashScreen() {
     div1.style.position = 'absolute';
     // div1.style.width = document.body.clientWidth/2 + 'px';
     // div1.style.height = document.body.clientHeight/2 + 'px';
-    div1.style.top = 200 + 'px';
-    div1.style.left = 200 + 'px';
+    div1.style.top = (window.innerHeight/20) + 'px';
+    div1.style.left = (window.innerWidth/20) + 'px';
     // div1.innerHTML = "Star Wars: An Old Beginning <br/>";
     div1.id = "titlediv";
     div1.style.backgroundColor = "transparent";
@@ -697,7 +755,21 @@ function initText() {
 
 
 function render() {
-    var current_camera = camera;
+    var now = Date.now();
+    if (now - last_spawn_time > spawn_more_limit && boids_tie.length < max_ties){
+        last_spawn_time = now;
+        spawn_more_ties(spawn_count);
+    }
+
+    if (inFirstPerson) {
+        current_camera = firstPersonCamera;
+    } else {
+        current_camera = worldCamera;
+    }
+
+    if (in_dead_state) {
+        enter_dead_state();
+    }
 
     if (!conclude) {
         // First update star destroyer, so geometry is consistent
@@ -728,9 +800,8 @@ function render() {
         }
 
         if (selectBoid !== undefined) {
-            if (inFirstPerson) {
+            if (inFirstPerson && !in_dead_state) {
                 firstPersonControls.getObject().position.copy(selectBoid.position);
-                //current_camera = firstPersonCamera;
             }
             else {
                 selectSphereMesh.position.copy(selectBoid.position);
@@ -754,8 +825,6 @@ function exitFirstPerson() {
     inFirstPerson = false;
     firstPersonControls.enabled = false;
     controls.enabled = true;   
-    copyCamera( worldCamera, camera );
-    camera.position.copy(camera.position.normalize().multiplyScalar(450));
 }
 
 // --------------------- Event Handlers ---------------------------
@@ -815,8 +884,6 @@ function onKeyDown( event ) {
                 firstPersonControls.enabled = true;
                 firstPersonControls.getObject().position.copy(selectBoid.position);
                 inFirstPerson = true;
-                copyCamera( camera, worldCamera );
-                copyCamera( firstPersonCamera, camera );
                 scene.remove(selectSphereMesh);
             }
             else {
@@ -863,12 +930,12 @@ function onKeyUp(e) {
 }
 
 function onLeftClick(e) {
-    if (e.shiftKey) {
+    if (e.shiftKey && !inFirstPerson) {
         mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
         // update the picking ray with the camera and mouse position
-        raycaster.setFromCamera( mouse, camera );
+        raycaster.setFromCamera( mouse, current_camera );
 
         // calculate objects intersecting the picking ray
         var intersects = raycaster.intersectObjects( birds_xwing );

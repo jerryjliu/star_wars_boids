@@ -186,14 +186,19 @@ var Boid = function() {
             else _acceleration.add(this.fleeEnemy(enemy_boids));
         }
     };
-    this.forcedMove = function (velocity) {
+    this.forcedMove = function (velocity, sd_boid = undefined) {
         this.velocity.copy( velocity ).multiplyScalar(_maxSpeed);
         var l = this.velocity.length();
         if ( l > _maxSpeed ) {
             this.velocity.divideScalar( l / _maxSpeed );
         }
         this.position.add( this.velocity );
+        this.checkBounds();
+        if (sd_boid !== undefined) {
+            this.avoidStarDestroyer(sd_boid);
+        }
         _acceleration.set( 0, 0, 0 );
+        
     }
 
     // Rodrigues rotation formula
@@ -609,7 +614,8 @@ var Explosion = function(init_position, num_particles, init_vel) {
     };
 
     this.run = function() {
-        if (_distance_travelled > _max_distance || this.checkBounds()) {
+        //if (_distance_travelled > _max_distance || this.checkBounds()) {
+        if (_distance_travelled > _max_distance) {
             // console.log("REMOVING");
             // if (_distance_travelled > _max_distance) console.log("because of max distance");
             // else console.log("BECAUE OF BOUNDS");
