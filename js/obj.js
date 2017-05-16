@@ -8,8 +8,11 @@ var Boid = function() {
     this.type = null;
     this.fired = false;
 
+    this.active = false;
     this.pursue = false;
     this.hp = 1;
+    this.enemiesKilled = 0;
+
     this.beginBehaviorTime = Math.floor(Date.now() / 1000);
     this.curBehaviorTime = this.beginBehaviorTime;
     this.behaviorLength = (Math.random() * 10) + 4;
@@ -165,22 +168,23 @@ var Boid = function() {
         _acceleration.add( this.avoidBoids( enemy_boids ) );
 
         // update pursuit behavior
-
-        this.curBehaviorTime = Math.floor(Date.now() / 1000);
-        if (this.curBehaviorTime - this.beginBehaviorTime > this.behaviorLength) {
-            if (this.pursue) {
-                this.behaviorLength = (Math.random() * 10) + 4;
-                this.pursue = false;
+        if (this.active) {
+            this.curBehaviorTime = Math.floor(Date.now() / 1000);
+            if (this.curBehaviorTime - this.beginBehaviorTime > this.behaviorLength) {
+                if (this.pursue) {
+                    this.behaviorLength = (Math.random() * 10) + 4;
+                    this.pursue = false;
+                }
+                else {
+                    this.behaviorLength = (Math.random() * 10) + 4;
+                    this.pursue = true;
+                }
+                this.beginBehaviorTime = this.curBehaviorTime;
+                
             }
-            else {
-                this.behaviorLength = (Math.random() * 10) + 4;
-                this.pursue = true;
-            }
-            this.beginBehaviorTime = this.curBehaviorTime;
-            
+            if (this.pursue) _acceleration.add(this.pursueEnemy(enemy_boids));
+            else _acceleration.add(this.fleeEnemy(enemy_boids));
         }
-        if (this.pursue) _acceleration.add(this.pursueEnemy(enemy_boids));
-        else _acceleration.add(this.fleeEnemy(enemy_boids));
     };
     this.forcedMove = function (velocity) {
         this.velocity.copy( velocity ).multiplyScalar(_maxSpeed);
@@ -477,6 +481,10 @@ var Bullet = function(init_position, init_velocity, owner) {
             }
         }
     };
+
+    this.getOwner = function() {
+        return _owner;
+    }
 
     this.checkBounds = function () {
         if ( this.position.x >   _width ) {

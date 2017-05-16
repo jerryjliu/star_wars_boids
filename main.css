@@ -6,3 +6,19 @@
 html {
 	font-family: MyWebFont;
 }
+
+#titlediv {
+	font-size:80px;
+}
+
+#beginButton {
+	background-color: Transparent;
+    background-repeat:no-repeat;
+    border: none;
+    cursor:pointer;
+    overflow: hidden;
+    outline:none;
+    color: white;
+    font-size:20px;
+    font-family: MyWebFont;
+}

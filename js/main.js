@@ -10,7 +10,7 @@ var bird, boid;
 var birds_xwing, boids_xwing;
 var birds_tie, boids_tie;
 
-var init_count = 20;
+var init_count = 50;
 
 var bullet, bullet_mesh;
 var bullets_xwing, bullet_meshs_xwing;
@@ -46,6 +46,9 @@ var worldCameraPosition = new THREE.Vector3();
 // Star Destroyer
 var sd;
 var sd_boid;
+
+// game has concluded
+var conclude = false;
 
 // compatability check before starting
 if (Detector.webgl) {
@@ -216,6 +219,8 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
         if (collision_i !== undefined) {
             // TODO: do something here for an explosion when there is a collision
             boids[collision_i].hp -= 1;
+            bullet.getOwner().enemiesKilled += 1;
+            console.log(bullet.getOwner().enemiesKilled);
             // boid is killed, update necessary data structures
             if (boids[collision_i].hp == 0) {
                 var collide_pos = bullet.position.clone();
@@ -429,6 +434,7 @@ function init() {
 
     stats = new Stats();
     document.getElementById( 'container' ).appendChild(stats.dom);
+    initSplashScreen();
     initText();
 
     window.addEventListener('resize', onWindowResize, false );
@@ -436,6 +442,11 @@ function init() {
     window.addEventListener('contextmenu', onRightClick, false);
     window.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('keyup', onKeyUp, true);
+
+    document.getElementById("beginButton").addEventListener("click", function() {
+        console.log('hi0');
+        initializeGame();
+    });
 
     // For selecting units
     raycaster = new THREE.Raycaster();
@@ -447,6 +458,98 @@ function init() {
     firstPersonControls.enabled = false;
     scene.add( firstPersonControls.getObject() );
     var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+}
+
+function initSplashScreen() {
+    var div1 = document.createElement('div');
+    div1.style.position = 'absolute';
+    // div1.style.width = document.body.clientWidth/2 + 'px';
+    // div1.style.height = document.body.clientHeight/2 + 'px';
+    div1.style.top = 200 + 'px';
+    div1.style.left = 200 + 'px';
+    // div1.innerHTML = "Star Wars: An Old Beginning <br/>";
+    div1.id = "titlediv";
+    div1.style.backgroundColor = "transparent";
+    div1.style.color = "white";
+    div1.opacity = 0.5;
+
+    var titletext = document.createElement('p');
+    titletext.id = 'titletext';
+    titletext.innerHTML = 'Star Wars: An Old Beginning';
+    div1.appendChild(titletext);
+    
+    var btn = document.createElement('button');
+    btn.innerHTML = 'Begin';
+    btn.id = "beginButton";
+    div1.appendChild(btn);
+
+    document.body.appendChild(div1);
+}
+
+function initializeGame() {
+    for(var i = 0; i < boids_xwing.length; i++) {
+        boids_xwing[i].active = true;
+    }
+    for(var i = 0; i < boids_tie.length; i++) {
+        boids_tie[i].active = true;
+    }
+    console.log("hello");
+    document.getElementById("xwingdiv").style.visibility = "visible";
+    document.getElementById("tiediv").style.visibility = "visible";
+    document.getElementById("titlediv").style.visibility = "hidden";
+}
+
+function concludeGame(winner) {
+    conclude = true;
+    document.getElementById("xwingdiv").style.visibility = "hidden";
+    document.getElementById("tiediv").style.visibility = "hidden";
+    document.getElementById("titlediv").style.visibility = "visible";
+    var winText = "";
+    if (winner == 'xwing') {
+        winText = "The Rebels have won and defeated the Empire!";
+    } else if (winner == 'tie') {
+        winText = "The Empire has won and eliminated all opposition";
+    }
+    document.getElementById("titletext").innerHTML = winText;
+    document.getElementById("beginButton").innerHTML = "Restart";
+
+    document.getElementById("beginButton").addEventListener("click", function() {
+        // boids_xwing = [];
+        // boids_tie = [];
+        // bullets_xwing = [];
+        // bullets_tie = [];
+        // explosions = [];
+        // for(var i = 0; i < birds_xwing.length; i++) {
+        //     scene.remove(birds_xwing[i]);
+        // }
+        // for(var i = 0; i < birds_tie.length; i++) {
+        //     scene.remove(birds_tie[i]);
+        // }
+        // for(var i = 0; i < bullet_meshs_xwing.length; i++) {
+        //     scene.remove(bullet_meshs_xwing[i]);
+        // }
+        // for(var i = 0; i < bullet_meshs_tie.length; i++) {
+        //     scene.remove(bullet_meshs_tie[i]);
+        // }
+        // scene.remove(sd);
+        // sd = null;
+        // sd_boid = null;
+        // document.getElementById("tiecount").innerHTML = init_count + "";
+        // document.getElementById("xwingcount").innerHTML = init_count + "";
+        // init_boids_birds(boids_xwing, birds_xwing, true);
+        // init_boids_birds(boids_tie, birds_tie, false);
+        // init_star_destroyer();
+        // for(var i = 0; i < boids_xwing.length; i++) {
+        //     boids_xwing[i].active = true;
+        // }
+        // for(var i = 0; i < boids_tie.length; i++) {
+        //     boids_tie[i].active = true;
+        // }
+        // conclude = false;
+
+        location.reload();
+    });
+
 }
 
 function initText() {
@@ -461,6 +564,7 @@ function initText() {
     div1.style.top = 200 + 'px';
     div1.style.left = 200 + 'px';
     div1.id = "xwingdiv";
+    div1.style.visibility = "hidden";
 
     var count1 = document.createElement('p');
     count1.innerHTML = "" + init_count;
@@ -478,43 +582,77 @@ function initText() {
     div2.style.top = 200 + 'px';
     div2.style.left = 400 + 'px';
     div2.id = "tiediv";
+    div2.style.visibility = "hidden";
 
     var count2 = document.createElement('p');
     count2.innerHTML = "" + init_count;
     count2.id = "tiecount";
     div2.appendChild(count2);
 
+    var div3 = document.createElement('div');
+    div3.style.position = 'absolute';
+    //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+    div3.style.width = 100;
+    div3.style.height = 100;
+    div3.style.backgroundColor = "transparent";
+    div3.style.color = "white";
+    div3.innerHTML = "Enemies Killed: ";
+    div3.style.top = 200 + 'px';
+    div3.style.left = 600 + 'px';
+    div3.id = "killedDiv";
+    div3.style.visibility = "hidden";
+
+    var count3 = document.createElement('p');
+    count3.innerHTML = "" + init_count;
+    count3.id = "killedcount";
+    div3.appendChild(count3);
+
     document.body.appendChild(div1);
-    document.body.appendChild(div2)
+    document.body.appendChild(div2);
+    document.body.appendChild(div3);
 }
 
 
 function render() {
     var current_camera = camera;
 
-    // First update star destroyer, so geometry is consistent
-    update_boid_mesh(sd_boid, sd);
-    sd_boid.updateGeoWithMesh(sd);
+    if (!conclude) {
+        // First update star destroyer, so geometry is consistent
+        update_boid_mesh(sd_boid, sd);
+        sd_boid.updateGeoWithMesh(sd);
 
-    update_boids_birds(boids_xwing, birds_xwing, boids_tie, bullets_tie);
-    update_boids_birds(boids_tie, birds_tie, boids_xwing, bullets_xwing);
-
-    update_bullets(bullets_xwing, bullet_meshs_xwing, boids_tie, birds_tie);
-    update_bullets(bullets_tie, bullet_meshs_tie, boids_xwing, birds_xwing);
-
-    update_explosions(explosions);
-
-    if (selectBoid !== undefined) {
-        if (inFirstPerson) {
-            firstPersonControls.getObject().position.copy(selectBoid.position);
-            //current_camera = firstPersonCamera;
+        if (boids_xwing.length == 0) {
+            concludeGame('tie');
+        } else if (boids_tie.length == 0) {
+            concludeGame('xwing');
         }
-        else {
-            selectSphereMesh.position.copy(selectBoid.position);
+
+        update_boids_birds(boids_xwing, birds_xwing, boids_tie, bullets_tie);
+        update_boids_birds(boids_tie, birds_tie, boids_xwing, bullets_xwing);
+
+        update_bullets(bullets_xwing, bullet_meshs_xwing, boids_tie, birds_tie);
+        update_bullets(bullets_tie, bullet_meshs_tie, boids_xwing, birds_xwing);
+
+        update_explosions(explosions);
+        if (selectBoid != undefined) {
+            document.getElementById("killedDiv").style.visibility = "visible";
+            document.getElementById("killedcount").innerHTML = selectBoid.enemiesKilled;
+        } else {
+            document.getElementById("killedDiv").style.visibility = "hidden";
         }
+
+        if (selectBoid !== undefined) {
+            if (inFirstPerson) {
+                firstPersonControls.getObject().position.copy(selectBoid.position);
+                //current_camera = firstPersonCamera;
+            }
+            else {
+                selectSphereMesh.position.copy(selectBoid.position);
+            }
+        }
+        renderer.render( scene, current_camera );
     }
-
-    renderer.render( scene, current_camera );
+    
 }
 
 function animate() {
