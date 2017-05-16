@@ -62,7 +62,7 @@ var bullets_sd, bullet_meshs_sd;
 var conclude = false;
 
 var last_spawn_time;
-var spawn_more_limit = 10000; // time in ms between tie spawns
+var spawn_more_limit = 12000; // time in ms between tie spawns
 var spawn_count = 3;
 var max_ties = init_count * 1.2;
 
