@@ -282,6 +282,32 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
                 sd_boid.hp -= 1;
                 document.getElementById('StarDestroyerHP').innerHTML = "" + (sd_boid.hp);
                 if (sd_boid.hp <= 0) {
+                    var collide_pos = bullet.position.clone();
+                    var collide_vel = bullet.velocity.clone();
+                    console.log("STAR DESTROYER DESTROYED");
+                    sd.updateMatrixWorld();
+                    console.log(sd.geometry);
+                    for(var i = 0; i < sd.geometry.vertices.length; i++) {
+                        console.log(sd.geometry.vertices[i]);
+                        var wVert = sd.geometry.vertices[i].clone().applyMatrix4(sd.matrixWorld);
+                        // for(var j = 0; j < 10; j++) {
+                        //     var tmprand = new THREE.Vector3();
+                        //     tmprand.x = Math.random() * 100 - 50;
+                        //     tmprand.y = Math.random() * 100 - 50;
+                        //     tmprand.z = Math.random() * 100 - 50;
+                        //     var explosion = create_explosion(wVert.clone().add(tmprand), collide_vel, 2000, 100, 100);
+                        //     explosions.push(explosion);
+                        // }
+                        for(var j = 0; j < sd.geometry.vertices.length; j++) {
+                            if (i == j) continue;
+                            var uVert = sd.geometry.vertices[j].clone().applyMatrix4(sd.matrixWorld);
+                            for(var k = 0; k < 6; k++) {
+                                var thisVert = wVert.clone().multiplyScalar(k/5).add(uVert.clone().multiplyScalar(1 - k/5));
+                                var explosion = create_explosion(thisVert, collide_vel, 75, 200, 200);
+                                explosions.push(explosion);
+                            }
+                        }
+                    }
                     // TODO: fill in StarDestroyer explosion
                     scene.remove(sd);
                     sd_boid = undefined;
@@ -289,6 +315,7 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
                     scene.remove(turret);
                     scene.remove(turret2);
                     console.log('successful removal');
+                    
                 }
             }
             else {
@@ -325,9 +352,10 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
 }
 
 // create explosion
-function create_explosion(init_pos, init_vel) {
-    var numparticles = 75;
+function create_explosion(init_pos, init_vel, max_distance=75, numparticles=75, vel_scale=1) {
+    init_vel.multiplyScalar(vel_scale);
     var explosion = new Explosion(init_pos, numparticles, init_vel);
+    explosion.setMaxDistance(max_distance);
     var geometry = new THREE.BoxGeometry( 4, 4, 4 );
     var material = new THREE.MeshBasicMaterial( { color: explosion_color } );
     particle_mesh = new THREE.Mesh( geometry, material );
