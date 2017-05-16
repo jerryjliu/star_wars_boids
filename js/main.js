@@ -116,7 +116,7 @@ function init_boids_birds(boids, birds, xwing) {
             //                                 { color:Math.random() * 0xff0000, 
             //                                     side: THREE.DoubleSide } );
             var material = new THREE.MeshPhongMaterial( {color: 0xffffff, side: THREE.DoubleSide });
-            material.map  = THREE.ImageUtils.loadTexture('../images/xwing.png');
+            material.map  = THREE.ImageUtils.loadTexture('/star_wars_boids/images/xwing.png');
             bird = birds[ i ] = new THREE.Mesh( new Xwing(), material);
             boid.type = 'xwing';
         } else {
@@ -128,7 +128,7 @@ function init_boids_birds(boids, birds, xwing) {
             // material.color = 0xff0000;
 
             var material = new THREE.MeshPhongMaterial( {color: 0xffffff, side: THREE.DoubleSide });
-            material.map  = THREE.ImageUtils.loadTexture('../images/tie2.png');
+            material.map  = THREE.ImageUtils.loadTexture('/star_wars_boids/images/tie2.png');
 
             bird = birds[ i ] = new THREE.Mesh( new Tie(), material);
             boid.type = 'tie';
@@ -152,7 +152,7 @@ function init_star_destroyer() {
     // });
     var material = new THREE.MeshPhongMaterial( { color: 0xffffff, 
                                                     side: THREE.DoubleSide } );
-    material.map  = THREE.ImageUtils.loadTexture('../images/tie.jpg');
+    material.map  = THREE.ImageUtils.loadTexture('/star_wars_boids/images/tie.jpg');
     sd = new THREE.Mesh( new StarDestroyer(), material)
     // sd.position.set(10, 20, 50);
     // sd.rotation.x = Math.PI/2;
@@ -171,9 +171,9 @@ function init_star_destroyer() {
 
     var turretgeo = new THREE.SphereGeometry(10, 32, 32);
     turret = new THREE.Mesh(turretgeo, new THREE.MeshPhongMaterial( {color: 0x696969, side: THREE.DoubleSide }));
-    turret.material.map = THREE.ImageUtils.loadTexture('../images/turret2.png');
+    turret.material.map = THREE.ImageUtils.loadTexture('/star_wars_boids/images/turret2.png');
     turret2 = new THREE.Mesh(turretgeo, new THREE.MeshPhongMaterial( {color: 0x696969, side: THREE.DoubleSide }));
-    turret2.material.map = THREE.ImageUtils.loadTexture('../images/turret2.png');
+    turret2.material.map = THREE.ImageUtils.loadTexture('/star_wars_boids/images/turret2.png');
     turret_loc_pos = new THREE.Vector4(0, 25, 0, 1);
     turret_loc_pos2 = new THREE.Vector4(0, -25, 0, 1);
     scene.add(turret);
@@ -433,7 +433,7 @@ function init_bullet_obj(owner, bullet_arr, bullet_mesh_arr, color, force_fire=f
             // console.log(distToCamera);
             // console.log(owner.type);
             laserAudio = document.createElement('AUDIO');
-            laserAudio.setAttribute('src', 'audio/laser.mp3');
+            laserAudio.setAttribute('src', '/star_wars_boids/audio/laser.mp3');
             laserAudio.loop = false;
             laserAudio.currentTime = 0;
             laserAudio.volume = 0.02 / (1 + (distToCamera * 0.02));
@@ -598,7 +598,7 @@ function spawn_more_ties(count) {
         boid.active = true;
 
         var material = new THREE.MeshPhongMaterial( {color: 0x808080, side: THREE.DoubleSide });
-        material.map  = THREE.ImageUtils.loadTexture('../images/tie2.png');
+        material.map  = THREE.ImageUtils.loadTexture('/star_wars_boids/images/tie2.png');
         var bird = new THREE.Mesh( new Tie(), material);
         boid.type = 'tie';
         bird.scale.set(2,2,2);
@@ -654,13 +654,13 @@ function init() {
 
     // initialize Audio
     mainAudio = document.createElement('AUDIO');
-    mainAudio.setAttribute('src', 'audio/open.mp3');
+    mainAudio.setAttribute('src', '/star_wars_boids/audio/open.mp3');
     mainAudio.loop = true;
     mainAudio.autoplay = "autoplay";
     console.log(mainAudio);
     document.body.appendChild(mainAudio);
     laserAudio = document.createElement('AUDIO');
-    laserAudio.setAttribute('src', 'audio/laser.mp3');
+    laserAudio.setAttribute('src', '/star_wars_boids/audio/laser.mp3');
     laserAudio.loop = false;
     laserAudio.volume = 0.03;
     document.body.appendChild(laserAudio);
@@ -749,7 +749,7 @@ function initializeGame() {
     document.getElementById("starDestroyerHPDiv").style.visibility = "visible";
 
     // set different audio
-    mainAudio.setAttribute('src', 'audio/battle.mp3');
+    mainAudio.setAttribute('src', '/star_wars_boids/audio/battle.mp3');
     mainAudio.volume = 0.3;
 
 }
