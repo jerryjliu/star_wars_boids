@@ -88,7 +88,7 @@ if (Detector.webgl) {
 function init_boids_birds(boids, birds, xwing) {
     var total = init_count;
     if (xwing)
-        total *= 1.1;
+        total *= 1.05;
     console.log(total);
 
     for ( var i = 0; i < total; i ++ ) {
