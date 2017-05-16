@@ -104,7 +104,7 @@ function init_boids_birds(boids, birds, xwing) {
             // var material = new THREE.MeshBasicMaterial( 
             //                                 { color:Math.random() * 0xff0000, 
             //                                     side: THREE.DoubleSide } );
-            var material = new THREE.MeshPhongMaterial( {color: 0xd3d3d3, side: THREE.DoubleSide });
+            var material = new THREE.MeshPhongMaterial( {color: 0xffffff, side: THREE.DoubleSide });
             material.map  = THREE.ImageUtils.loadTexture('../images/xwing.png');
             bird = birds[ i ] = new THREE.Mesh( new Xwing(), material);
             boid.type = 'xwing';
@@ -116,7 +116,7 @@ function init_boids_birds(boids, birds, xwing) {
             // material.side = THREE.DoubleSide;
             // material.color = 0xff0000;
 
-            var material = new THREE.MeshPhongMaterial( {color: 0x808080, side: THREE.DoubleSide });
+            var material = new THREE.MeshPhongMaterial( {color: 0xffffff, side: THREE.DoubleSide });
             material.map  = THREE.ImageUtils.loadTexture('../images/tie2.png');
 
             bird = birds[ i ] = new THREE.Mesh( new Tie(), material);
@@ -139,7 +139,7 @@ function init_star_destroyer() {
     //     });
     //     scene.add(obj);
     // });
-    var material = new THREE.MeshBasicMaterial( { color: 0xffffff, 
+    var material = new THREE.MeshPhongMaterial( { color: 0xffffff, 
                                                     side: THREE.DoubleSide } );
     material.map  = THREE.ImageUtils.loadTexture('../images/tie.jpg');
     sd = new THREE.Mesh( new StarDestroyer(), material)
@@ -157,8 +157,10 @@ function init_star_destroyer() {
     // console.log(sd);
 
     var turretgeo = new THREE.SphereGeometry(10, 32, 32);
-    turret = new THREE.Mesh(turretgeo, new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } ));
-    turret2 = new THREE.Mesh(turretgeo, new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } ));
+    turret = new THREE.Mesh(turretgeo, new THREE.MeshPhongMaterial( {color: 0x696969, side: THREE.DoubleSide }));
+    turret.material.map = THREE.ImageUtils.loadTexture('../images/turret2.png');
+    turret2 = new THREE.Mesh(turretgeo, new THREE.MeshPhongMaterial( {color: 0x696969, side: THREE.DoubleSide }));
+    turret2.material.map = THREE.ImageUtils.loadTexture('../images/turret2.png');
     turret_loc_pos = new THREE.Vector4(0, 25, 0, 1);
     turret_loc_pos2 = new THREE.Vector4(0, -25, 0, 1);
     scene.add(turret);

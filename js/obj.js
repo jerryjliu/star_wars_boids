@@ -578,6 +578,7 @@ var Explosion = function(init_position, num_particles, init_vel) {
        }
     };
 
+
     // initialize velocities to random points on unit sphere
     function initializeVelocities(velocities, scaleVal) {
         standard = gaussian(0, 1);
@@ -612,6 +613,10 @@ var Explosion = function(init_position, num_particles, init_vel) {
             this.meshes[i] = mesh.clone();
             this.meshes[i].position.copy(this.positions[i]);
         }
+    }
+
+    this.setMaxDistance = function (maxDist) {
+        _max_distance = maxDist;
     }
 
     this.setWorldSize = function ( width, height, depth ) {
