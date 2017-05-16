@@ -176,6 +176,8 @@ function update_boid_mesh(boid, mesh) {
 }
 
 function update_turret(sd_boid, sd, turret, turret_loc_pos) {
+    if (sd_boid === undefined)
+        return;
     // update turret 
     sd.updateMatrixWorld();
     // turret.position = turret_loc_pos.clone().applyMatrix4(sd.matrixWorld);
@@ -272,25 +274,39 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
     for (var i = 0, il = bullets.length; i < il; i++) {
         bullet = bullets[i];
         bullet_mesh = bullet_meshs[i];
-        collision_i = bullet.run(boids);
+        collision_i = bullet.run(boids, sd_boid);
         if (collision_i !== undefined) {
-            // TODO: do something here for an explosion when there is a collision
-            boids[collision_i].hp -= 1;
-            bullet.getOwner().enemiesKilled += 1;
-            console.log(bullet.getOwner().enemiesKilled);
-            // boid is killed, update necessary data structures
-            if (boids[collision_i].hp == 0) {
-                var collide_pos = bullet.position.clone();
-                var collide_vel = bullet.velocity.clone();
-                if (boids[collision_i].type == 'xwing') {
-                    document.getElementById('xwingcount').innerHTML = "" + (boids.length - 1);
-                } else if (boids[collision_i].type == 'tie') {
-                    document.getElementById('tiecount').innerHTML = "" + (boids.length - 1);
+            if (collision_i == sd_boid) {
+                sd_boid.hp -= 1;
+                document.getElementById('StarDestroyerHP').innerHTML = "" + (sd_boid.hp);
+                if (sd_boid.hp <= 0) {
+                    // TODO: fill in StarDestroyer explosion
+                    scene.remove(sd);
+                    sd_boid = undefined;
+                    sd = undefined;
+                    scene.remove(turret);
+                    scene.remove(turret2);
+                    console.log('successful removal');
                 }
-                removeBoidBird(collision_i, boids, birds);
-                console.log('count: ' + boids.length);
-                var explosion = create_explosion(collide_pos, collide_vel);
-                explosions.push(explosion);
+            }
+            else {
+                boids[collision_i].hp -= 1;
+                bullet.getOwner().enemiesKilled += 1;
+                console.log(bullet.getOwner().enemiesKilled);
+                // boid is killed, update necessary data structures
+                if (boids[collision_i].hp == 0) {
+                    var collide_pos = bullet.position.clone();
+                    var collide_vel = bullet.velocity.clone();
+                    if (boids[collision_i].type == 'xwing') {
+                        document.getElementById('xwingcount').innerHTML = "" + (boids.length - 1);
+                    } else if (boids[collision_i].type == 'tie') {
+                        document.getElementById('tiecount').innerHTML = "" + (boids.length - 1);
+                    }
+                    removeBoidBird(collision_i, boids, birds);
+                    console.log('count: ' + boids.length);
+                    var explosion = create_explosion(collide_pos, collide_vel);
+                    explosions.push(explosion);
+                }              
             }
         }
         if (bullet.remove_this) {
@@ -366,6 +382,9 @@ function init_bullet_obj(owner, bullet_arr, bullet_mesh_arr, color, force_fire=f
 }
 
 function init_bullet_obj_sd(sd_boid, turret, fireVelocity, bullet_arr, bullet_mesh_arr, color) {
+    if (sd_boid === undefined) {
+        return;
+    }
     bullet = sd_boid.forceFireBullet(turret, fireVelocity);
     if (bullet !== undefined) {
         bullet_arr.push(bullet);
@@ -481,6 +500,9 @@ function enter_dead_state() {
 
 
 function spawn_more_ties(count) {
+    if (sd_boid === undefined) {
+        return;
+    }
     var local_spawn_coords = new THREE.Vector4(-200, -60, 0, 1);
     local_spawn_coords.applyMatrix4(sd.matrixWorld);
     var world_spawn_coords = new THREE.Vector3(local_spawn_coords.x, 
@@ -632,7 +654,8 @@ function initializeGame() {
     for(var i = 0; i < boids_tie.length; i++) {
         boids_tie[i].active = true;
     }
-    sd_boid.active = true; 
+    if (sd_boid !== undefined)
+        sd_boid.active = true; 
 
     console.log("hello");
     document.getElementById("xwingdiv").style.visibility = "visible";
@@ -748,15 +771,35 @@ function initText() {
     count3.id = "killedcount";
     div3.appendChild(count3);
 
+    var div4 = document.createElement('div');
+    div4.style.position = 'absolute';
+    //text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+    div4.style.width = 100;
+    div4.style.height = 100;
+    div4.style.backgroundColor = "transparent";
+    div4.style.color = "white";
+    div4.innerHTML = "Star Destroyer HP: ";
+    div4.style.top = 400 + 'px';
+    div4.style.left = 200 + 'px';
+    div4.id = "starDestroyerHPDiv";
+    div4.style.visibility = "hidden";
+    var count4 = document.createElement('p');
+    count4.innerHTML = "" + sd_boid.hp;
+    count4.id = "StarDestroyerHP";
+    div4.appendChild(count4);
+
     document.body.appendChild(div1);
     document.body.appendChild(div2);
     document.body.appendChild(div3);
+    document.body.appendChild(div4);
 }
 
 
 function render() {
     var now = Date.now();
-    if (now - last_spawn_time > spawn_more_limit && boids_tie.length < max_ties && sd_boid.active){
+    if (sd_boid !== undefined && 
+        now - last_spawn_time > spawn_more_limit && 
+        boids_tie.length < max_ties && sd_boid.active) {
         last_spawn_time = now;
         spawn_more_ties(spawn_count);
     }
@@ -773,11 +816,13 @@ function render() {
 
     if (!conclude) {
         // First update star destroyer, so geometry is consistent
-        update_boid_mesh(sd_boid, sd);
-        update_turret(sd_boid, sd, turret, turret_loc_pos);
-        update_turret(sd_boid, sd, turret2, turret_loc_pos2);
-        sd_boid.updateGeoWithMesh(sd);
-
+        if (sd_boid !== undefined) {
+            update_boid_mesh(sd_boid, sd);
+            update_turret(sd_boid, sd, turret, turret_loc_pos);
+            update_turret(sd_boid, sd, turret2, turret_loc_pos2);
+            sd_boid.updateGeoWithMesh(sd);
+        }
+        
         if (boids_xwing.length == 0) {
             concludeGame('tie');
         } else if (boids_tie.length == 0) {
@@ -797,6 +842,9 @@ function render() {
             document.getElementById("killedcount").innerHTML = selectBoid.enemiesKilled;
         } else {
             document.getElementById("killedDiv").style.visibility = "hidden";
+        }
+        if (sd_boid === undefined || sd_boid.active){
+            document.getElementById("starDestroyerHPDiv").style.visibility = "visible";
         }
 
         if (selectBoid !== undefined) {

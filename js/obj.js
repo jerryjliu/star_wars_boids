@@ -453,6 +453,7 @@ var Bullet = function(init_position, init_velocity, owner) {
     this.velocity = init_velocity.normalize().multiplyScalar(8);
     var distance, boid;
     var _distance_unit = this.velocity.length();
+    var _plane = new THREE.Plane();
 
     this.setWorldSize = function ( width, height, depth ) {
         _width = width;
@@ -465,13 +466,12 @@ var Bullet = function(init_position, init_velocity, owner) {
         _distance_travelled += _distance_unit;  
     };
 
-    this.run = function(boids) {
+    this.run = function(boids, sd_boid = undefined) {
         if (_distance_travelled > _max_distance || this.checkBounds()) {
             this.remove_this = true;
             _owner.fired = false;
             return undefined;
-        }
-        else {
+        } else {
             this.move();
             for (var i = 0, il = boids.length; i < il; i++) {
                 boid = boids[i];
@@ -483,6 +483,24 @@ var Bullet = function(init_position, init_velocity, owner) {
                     _owner.fired = false;
                     return i;
                 }
+            }
+
+            if (sd_boid !== undefined && _owner.type == 'xwing') {
+                var _distance = sd_boid.bounding_box.distanceToPoint(this.position);
+                // console.log(_distance);
+                if (_distance > 0) return;
+                for (var i = 0, il = sd_boid.triangles.length; i < il; i++) {
+                    sd_boid.triangles[i].plane(_plane);
+                    _distance = _plane.normal.dot(this.position) + _plane.constant;
+                    if (_distance > 0) {
+                        return;
+                    }
+                }
+                // if reach this point, it is inside
+                console.log('hit sd!');
+                this.remove_this = true;
+                _owner.fired = false;
+                return sd_boid;
             }
         }
     };
@@ -662,6 +680,8 @@ var StarDestroyerBoid = function () {
     this.bounding_box = new THREE.Box3();
     this.triangles = [];
     this.effective_distance = 10;
+
+    this.hp = 2;
 
     this.position = new THREE.Vector3();
     this.velocity = new THREE.Vector3();
