@@ -712,7 +712,7 @@ var StarDestroyerBoid = function () {
 
     var _width, _height, _depth;
 
-    var radians, cos_radians, sin_radians, max_turn_angle = 1;
+    var radians, cos_radians, sin_radians, max_turn_angle = 1.2;
     radians = max_turn_angle*Math.PI/180;
     cos_radians = Math.cos(radians);
     sin_radians = Math.sin(radians);
@@ -793,7 +793,7 @@ var StarDestroyerBoid = function () {
         var steer = new THREE.Vector3();
         steer.copy( this.position );
         steer.sub( target );
-        if (steer.length() > target.length()/3) {
+        if (steer.length() > target.length()/4) {
             return steer.set(0,0,0);
         }
         steer.multiplyScalar( 1 / this.position.distanceToSquared( target ) );

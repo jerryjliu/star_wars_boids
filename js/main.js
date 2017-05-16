@@ -22,7 +22,7 @@ const explosion_color = 0xffa500;
 
 var explosions;
 
-var scene_width_half = 700 * 2;
+var scene_width_half = 800 * 2;
 var scene_height_half = 400 * 2;
 var scene_depth_half = 350 * 2;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
@@ -648,7 +648,7 @@ function init() {
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
     selectGeo = new THREE.SphereGeometry(10);
-    selectMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
+    selectMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.25, transparent: true } );
     selectSphereMesh = new THREE.Mesh( selectGeo, selectMaterial);
     firstPersonControls = new THREE.PointerLockControls( firstPersonCamera );
     firstPersonControls.enabled = false;
@@ -661,7 +661,7 @@ function initSplashScreen() {
     div1.style.position = 'absolute';
     // div1.style.width = document.body.clientWidth/2 + 'px';
     // div1.style.height = document.body.clientHeight/2 + 'px';
-    div1.style.top = (window.innerHeight/20) + 'px';
+    div1.style.top = (window.innerHeight/35) + 'px';
     div1.style.left = (window.innerWidth/20) + 'px';
     // div1.innerHTML = "Star Wars: An Old Beginning <br/>";
     div1.id = "titlediv";
@@ -671,7 +671,7 @@ function initSplashScreen() {
 
     var titletext = document.createElement('p');
     titletext.id = 'titletext';
-    titletext.innerHTML = 'Star Wars: Attack of the Boids';
+    titletext.innerHTML = 'Star Wars: The Boids Awaken';
     div1.appendChild(titletext);
     
     var btn = document.createElement('button');
@@ -762,9 +762,11 @@ function initText() {
     div1.style.height = 100;
     div1.style.backgroundColor = "transparent";
     div1.style.color = "white";
-    div1.innerHTML = "X-Wing: ";
-    div1.style.top = 200 + 'px';
-    div1.style.left = 200 + 'px';
+    div1.innerHTML = "X-Wings Remaining: ";
+    div1.style.top = (3*window.innerHeight/20) + 'px';
+    div1.style.left = (window.innerWidth/20) + 'px';
+    // div1.style.top = 200 + 'px';
+    // div1.style.left = 200 + 'px';
     div1.id = "xwingdiv";
     div1.style.visibility = "hidden";
 
@@ -780,9 +782,11 @@ function initText() {
     div2.style.height = 100;
     div2.style.backgroundColor = "transparent";
     div2.style.color = "white";
-    div2.innerHTML = "Tie Fighter: ";
-    div2.style.top = 200 + 'px';
-    div2.style.left = 400 + 'px';
+    div2.innerHTML = "Tie Fighters Remaining: ";
+    //div2.style.top = 200 + 'px';
+    div2.style.top = (3*window.innerHeight/20) + 'px';
+    // div2.style.left = 400 + 'px';
+    div2.style.left = (5*window.innerWidth/20) + 'px';
     div2.id = "tiediv";
     div2.style.visibility = "hidden";
 
@@ -799,8 +803,10 @@ function initText() {
     div3.style.backgroundColor = "transparent";
     div3.style.color = "white";
     div3.innerHTML = "Enemies Killed: ";
-    div3.style.top = 200 + 'px';
-    div3.style.left = 600 + 'px';
+    div3.style.top = (3*window.innerHeight/20) + 'px';
+    //div3.style.top = 200 + 'px';
+    //div3.style.left = 600 + 'px';
+    div3.style.left = (10*window.innerWidth/20) + 'px';
     div3.id = "killedDiv";
     div3.style.visibility = "hidden";
 
@@ -817,8 +823,10 @@ function initText() {
     div4.style.backgroundColor = "transparent";
     div4.style.color = "white";
     div4.innerHTML = "Star Destroyer HP: ";
-    div4.style.top = 400 + 'px';
-    div4.style.left = 200 + 'px';
+    div4.style.top = (3*window.innerHeight/20) + 'px';
+    //div4.style.top = 400 + 'px';
+    // div4.style.left = 100 + 'px';
+    div4.style.left = (15*window.innerWidth/20) + 'px';
     div4.id = "starDestroyerHPDiv";
     div4.style.visibility = "hidden";
     var count4 = document.createElement('p');
@@ -832,9 +840,11 @@ function initText() {
     div5.style.height = 100;
     div5.style.backgroundColor = "transparent";
     div5.style.color = "white";
-    div5.innerHTML = "R to select an X-wing.    W to fly X-wing.   SPACE to shoot X-wing.  Q to leave X-wing.\nWin by eliminating all TIEs.";
-    div5.style.top = (window.innerHeight - Math.max(window.innerHeight/5, 150)) + 'px';
-    div5.style.left = 200 + 'px';
+    div5.innerHTML = "R to get an X-wing. W to fly X-wing. SPACE to shoot X-wing. Q to leave X-wing. Win by eliminating all TIEs.";
+    // div5.style.top = (window.innerHeight/20) + 'px';
+    div5.style.left = (window.innerWidth/20) + 'px';
+    div5.style.top = (window.innerHeight - Math.max(window.innerHeight/8, 40)) + 'px';
+    // div5.style.left = 100 + 'px';
     div5.id = "instructionsDiv";
     div5.style.visibility = "visible";
     var count5 = document.createElement('p');
