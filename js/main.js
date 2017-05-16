@@ -46,6 +46,9 @@ var worldCamera;
 var firstPersonCamera;
 var current_camera;
 
+var in_dead_state = false;
+var dead_time;
+
 // Star Destroyer
 var sd;
 var sd_boid;
@@ -158,14 +161,14 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
     for ( var i = 0, il = birds.length; i < il; i++ ) {
         boid = boids[ i ];
         if (boid == selectBoid && inFirstPerson) {
-            boid.forcedMove(firstPersonControls.getDirection());
+            boid.forcedMove(firstPersonControls.getDirection(), sd_boid);
         }
         else
             boid.run( boids, enemy_boids, enemy_bullets, sd_boid);
 
         if (boid.collided) {
-            var collide_pos = boid.position.clone();
-            var collide_vel = boid.velocity.clone().normalize().multiplyScalar(-1);
+            var collide_vel = boid.velocity.clone().multiplyScalar(-1);
+            var collide_pos = boid.position.clone().sub(collide_vel);
             removeBoidBird(i, boids, birds);
             console.log('count: ' + boids.length);
             var explosion = create_explosion(collide_pos, collide_vel);
@@ -384,7 +387,8 @@ function removeBoidBird(i, boids, birds) {
     scene.remove(birds[i]);
     if (boids[i] == selectBoid) {
         if (inFirstPerson) {
-            exitFirstPerson();
+            enter_dead_state();
+            //exitFirstPerson();
         } else {
             selectBoid = undefined;
             scene.remove( selectSphereMesh );
@@ -392,6 +396,20 @@ function removeBoidBird(i, boids, birds) {
     }
     boids.splice(i, 1);
     birds.splice(i, 1);
+}
+
+function enter_dead_state() {
+    if (dead_time === undefined) {
+        dead_time = Date.now();
+    }
+    in_dead_state = true;
+    var waitTime = Date.now() - dead_time;
+    var waitLimit = 500;
+    if (waitTime > waitLimit) {
+        dead_time = undefined;
+        in_dead_state = false;
+        exitFirstPerson();
+    }
 }
 
 // ------------ Main Initializer and Renderer Loop -----------------
@@ -633,6 +651,10 @@ function render() {
         current_camera = worldCamera;
     }
 
+    if (in_dead_state) {
+        enter_dead_state();
+    }
+
     if (!conclude) {
         // First update star destroyer, so geometry is consistent
         update_boid_mesh(sd_boid, sd);
@@ -659,7 +681,7 @@ function render() {
         }
 
         if (selectBoid !== undefined) {
-            if (inFirstPerson) {
+            if (inFirstPerson && !in_dead_state) {
                 firstPersonControls.getObject().position.copy(selectBoid.position);
             }
             else {

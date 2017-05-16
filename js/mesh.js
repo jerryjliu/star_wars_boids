@@ -135,7 +135,7 @@ var StarDestroyer = function () {
     v(-half_depth, -half_height, 0); // 5 - back bottom of destroyer
 
     f3(0, 1, 2); // top right
-    f3(1, 0, 3); // top left
+    f3(0, 3, 1); // top left
     f3(0, 2, 5); // bottom right
     f3(0, 5, 3); // bottom left
 
@@ -159,9 +159,9 @@ var StarDestroyer = function () {
 
     for (i = 0; i < this.faces.length ; i++) {
        this.faceVertexUvs[0].push([
-         new THREE.Vector2( Math.random(), Math.random() ),
-         new THREE.Vector2( Math.random(), Math.random() ),
-         new THREE.Vector2( Math.random(), Math.random() ),
+         new THREE.Vector2( 0, 1),
+         new THREE.Vector2( 1, 0 ),
+         new THREE.Vector2( 1, 0.5 ),
        ]);
     }
 
