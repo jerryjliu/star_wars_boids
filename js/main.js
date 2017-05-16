@@ -436,7 +436,7 @@ function init_bullet_obj(owner, bullet_arr, bullet_mesh_arr, color, force_fire=f
             laserAudio.setAttribute('src', '/star_wars_boids/audio/laser.mp3');
             laserAudio.loop = false;
             laserAudio.currentTime = 0;
-            laserAudio.volume = 0.02 / (1 + (distToCamera * 0.02));
+            laserAudio.volume = 0.03 / (1 + (distToCamera * 0.02));
             document.body.appendChild(laserAudio);
             laserAudio.play();
             laserAudios.push(laserAudio);
