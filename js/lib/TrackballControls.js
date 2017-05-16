@@ -364,19 +364,19 @@ THREE.TrackballControls = function ( object, domElement ) {
 
             return;
 
-        } else if ( event.keyCode === _this.keys[ STATE.ROTATE ] && ! _this.noRotate ) {
+        // } else if ( event.keyCode === _this.keys[ STATE.ROTATE ] && ! _this.noRotate ) {
 
-            _state = STATE.ROTATE;
+        //     _state = STATE.ROTATE;
 
-        } else if ( event.keyCode === _this.keys[ STATE.ZOOM ] && ! _this.noZoom ) {
+        // } else if ( event.keyCode === _this.keys[ STATE.ZOOM ] && ! _this.noZoom ) {
 
-            _state = STATE.ZOOM;
+        //     _state = STATE.ZOOM;
 
-        } else if ( event.keyCode === _this.keys[ STATE.PAN ] && ! _this.noPan ) {
+        // } else if ( event.keyCode === _this.keys[ STATE.PAN ] && ! _this.noPan ) {
 
-            _state = STATE.PAN;
+        //     _state = STATE.PAN;
 
-        }
+        // }
 
     }
 

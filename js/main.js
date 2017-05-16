@@ -44,6 +44,7 @@ var raycaster, mouse;
 
 var worldCamera;
 var firstPersonCamera;
+var current_camera;
 
 // Star Destroyer
 var sd;
@@ -148,7 +149,7 @@ function update_boid_mesh(boid, mesh) {
     mesh.rotation.z = Math.asin( boid.velocity.y / boid.velocity.length() );
     mesh.position.copy(boid.position);
     color = mesh.material.color;
-    color.r = color.g = color.b = Math.max((camera.position.clone().sub(mesh.position)).length() / diagonal, 0.35);
+    color.r = color.g = color.b = Math.max((current_camera.position.clone().sub(mesh.position)).length() / diagonal, 0.35);
 }
 
 // Update the locations of the boids and corresponding birds (meshs) by calling
@@ -177,7 +178,7 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
         bird = birds[ i ];
         bird.position.copy( boids[ i ].position );
         color = bird.material.color;
-        color.r = color.g = color.b = Math.max((camera.position.clone().sub(bird.position)).length() / diagonal, 0.2);
+        color.r = color.g = color.b = Math.max((current_camera.position.clone().sub(bird.position)).length() / diagonal, 0.2);
 
         // if (boid.pursue) {
         //     color.r = 1;
@@ -399,14 +400,13 @@ function init() {
     camera = new THREE.PerspectiveCamera( 75, 
         window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.z = 450;
-    console.log(camera);
     
     firstPersonCamera = camera.clone();
-    copyCamera(camera, firstPersonCamera);
+    // copyCamera(camera, firstPersonCamera);
     firstPersonCamera.position.z = 50;
 
     worldCamera = camera.clone();
-    copyCamera(camera, worldCamera);
+    // copyCamera(camera, worldCamera);
     worldCamera.position.copy(new THREE.Vector3(0, 0, 450));
 
     // initialize lights
@@ -443,7 +443,7 @@ function init() {
     renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
     document.body.appendChild( renderer.domElement );
 
-    controls = new THREE.OrbitControls( camera, renderer.domElement );
+    controls = new THREE.OrbitControls( worldCamera, renderer.domElement );
 
     stats = new Stats();
     document.getElementById( 'container' ).appendChild(stats.dom);
@@ -467,7 +467,7 @@ function init() {
     selectGeo = new THREE.SphereGeometry(10);
     selectMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, opacity: 0.5, transparent: true } );
     selectSphereMesh = new THREE.Mesh( selectGeo, selectMaterial);
-    firstPersonControls = new THREE.PointerLockControls( camera );
+    firstPersonControls = new THREE.PointerLockControls( firstPersonCamera );
     firstPersonControls.enabled = false;
     scene.add( firstPersonControls.getObject() );
     var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
@@ -478,8 +478,8 @@ function initSplashScreen() {
     div1.style.position = 'absolute';
     // div1.style.width = document.body.clientWidth/2 + 'px';
     // div1.style.height = document.body.clientHeight/2 + 'px';
-    div1.style.top = 200 + 'px';
-    div1.style.left = 200 + 'px';
+    div1.style.top = (window.innerHeight/20) + 'px';
+    div1.style.left = (window.innerWidth/20) + 'px';
     // div1.innerHTML = "Star Wars: An Old Beginning <br/>";
     div1.id = "titlediv";
     div1.style.backgroundColor = "transparent";
@@ -627,7 +627,11 @@ function initText() {
 
 
 function render() {
-    var current_camera = camera;
+    if (inFirstPerson) {
+        current_camera = firstPersonCamera;
+    } else {
+        current_camera = worldCamera;
+    }
 
     if (!conclude) {
         // First update star destroyer, so geometry is consistent
@@ -657,7 +661,6 @@ function render() {
         if (selectBoid !== undefined) {
             if (inFirstPerson) {
                 firstPersonControls.getObject().position.copy(selectBoid.position);
-                //current_camera = firstPersonCamera;
             }
             else {
                 selectSphereMesh.position.copy(selectBoid.position);
@@ -681,8 +684,6 @@ function exitFirstPerson() {
     inFirstPerson = false;
     firstPersonControls.enabled = false;
     controls.enabled = true;   
-    copyCamera( worldCamera, camera );
-    camera.position.copy(camera.position.normalize().multiplyScalar(450));
 }
 
 // --------------------- Event Handlers ---------------------------
@@ -742,8 +743,6 @@ function onKeyDown( event ) {
                 firstPersonControls.enabled = true;
                 firstPersonControls.getObject().position.copy(selectBoid.position);
                 inFirstPerson = true;
-                copyCamera( camera, worldCamera );
-                copyCamera( firstPersonCamera, camera );
                 scene.remove(selectSphereMesh);
             }
             else {
@@ -790,12 +789,12 @@ function onKeyUp(e) {
 }
 
 function onLeftClick(e) {
-    if (e.shiftKey) {
+    if (e.shiftKey && !inFirstPerson) {
         mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
         // update the picking ray with the camera and mouse position
-        raycaster.setFromCamera( mouse, camera );
+        raycaster.setFromCamera( mouse, current_camera );
 
         // calculate objects intersecting the picking ray
         var intersects = raycaster.intersectObjects( birds_xwing );
