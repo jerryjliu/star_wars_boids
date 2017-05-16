@@ -682,10 +682,10 @@ var StarDestroyerBoid = function () {
 
     _lastFireTime = 0;
     _lastBurstTime = 0;
-    _time_between_fires = 200;
-    _time_between_bursts = 3500;
+    _time_between_fires = 100;
+    _time_between_bursts = 3000;
     _burst_count = 0;
-    _burst_limit = 5;
+    _burst_limit = 10;
 
     this.setWorldSize = function ( width, height, depth ) {
         _width = width;
