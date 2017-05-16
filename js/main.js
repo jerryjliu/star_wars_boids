@@ -698,6 +698,8 @@ function concludeGame(winner) {
     document.getElementById("xwingdiv").style.visibility = "hidden";
     document.getElementById("tiediv").style.visibility = "hidden";
     document.getElementById("titlediv").style.visibility = "visible";
+    document.getElementById("killedDiv").style.visibility = "hidden";
+    document.getElementById("starDestroyerHPDiv").style.visibility = "hidden";
     var winText = "";
     if (winner == 'xwing') {
         winText = "The Rebels have won and defeated the Empire!";
