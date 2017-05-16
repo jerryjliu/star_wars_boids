@@ -23,7 +23,7 @@ const explosion_color = 0xffa500;
 var explosions;
 
 var scene_width_half = 700 * 2;
-var scene_height_half = 600 * 2;
+var scene_height_half = 400 * 2;
 var scene_depth_half = 350 * 2;
 var diagonal = Math.sqrt(scene_width_half*scene_width_half*4 + 
                         scene_height_half*scene_height_half*4 + 
@@ -62,8 +62,8 @@ var bullets_sd, bullet_meshs_sd;
 var conclude = false;
 
 var last_spawn_time;
-var spawn_more_limit = 10000;
-var spawn_count = 2;
+var spawn_more_limit = 10000; // time in ms between tie spawns
+var spawn_count = 3;
 var max_ties = init_count * 1.2;
 
 // compatability check before starting
@@ -86,14 +86,14 @@ function init_boids_birds(boids, birds, xwing) {
         boid.position.y = Math.random() * scene_height_half * 2 - scene_height_half;
         boid.position.z = Math.random() * scene_depth_half * 2 - scene_depth_half;
         //boid.velocity.x = Math.random() * init_vel - init_vel/2.;
-        boid.velocity.y = (Math.random() * init_vel - init_vel/2)/2;
-        boid.velocity.z = (Math.random() * init_vel - init_vel/2)/2;
+        boid.velocity.y = (Math.random() * init_vel - init_vel/2);
+        boid.velocity.z = (Math.random() * init_vel - init_vel/2);
         if (xwing) {
             boid.position.x = Math.random() * scene_width_half/3 + 3/5*scene_width_half;
-            boid.velocity.x = -Math.random() *init_vel;
+            boid.velocity.x = -Math.random() *init_vel*2;
         } else {
             boid.position.x = -(Math.random() * scene_width_half/3 + 3/5*scene_width_half);
-            boid.velocity.x = Math.random() * init_vel;
+            boid.velocity.x = Math.random() * init_vel*2;
         }
             
         boid.setAvoidWalls( true );
@@ -151,8 +151,10 @@ function init_star_destroyer() {
     scene.add( sd );
     sd_boid = new StarDestroyerBoid();
     sd_boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
-    sd_boid.position.set(-(Math.random() * scene_width_half/4 + 3/5*scene_width_half), 0, 0);
-    sd_boid.velocity.set(Math.random() + 2, (Math.random()-0.5)*0.2, (Math.random()-0.5)*0.2);
+    sd_boid.position.set(-(Math.random() * scene_width_half/4 + 3/5*scene_width_half), 
+                            Math.random() * scene_height_half - scene_height_half/2, 
+                            Math.random() * scene_depth_half - scene_depth_half/2);
+    sd_boid.velocity.set(Math.random() + 2, (Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5);
     sd_boid.updateGeoWithMesh(sd);
     // console.log(sd);
 
@@ -227,7 +229,7 @@ function update_boids_birds(boids, birds, enemy_boids, enemy_bullets) {
             var collide_vel = boid.velocity.clone().multiplyScalar(-1);
             var collide_pos = boid.position.clone().sub(collide_vel);
             removeBoidBird(i, boids, birds);
-            console.log('count: ' + boids.length);
+            // console.log('count: ' + boids.length);
             var explosion = create_explosion(collide_pos, collide_vel);
             explosions.push(explosion);
             i--;
@@ -283,14 +285,14 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
                 document.getElementById('StarDestroyerHP').innerHTML = "" + (sd_boid.hp);
                 var collide_pos = bullet.position.clone();
                 var collide_vel = bullet.velocity.clone();
-                var explosion = create_explosion(collide_pos, collide_vel, 75, 50, 4);
+                var explosion = create_explosion(collide_pos, collide_vel, 75, 50, 6);
                 explosions.push(explosion);
                 if (sd_boid.hp <= 0) {
                     console.log("STAR DESTROYER DESTROYED");
                     sd.updateMatrixWorld();
-                    console.log(sd.geometry);
+                    // console.log(sd.geometry);
                     for(var i = 0; i < sd.geometry.vertices.length; i++) {
-                        console.log(sd.geometry.vertices[i]);
+                        // console.log(sd.geometry.vertices[i]);
                         var wVert = sd.geometry.vertices[i].clone().applyMatrix4(sd.matrixWorld);
                         // for(var j = 0; j < 10; j++) {
                         //     var tmprand = new THREE.Vector3();
@@ -305,12 +307,11 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
                             var uVert = sd.geometry.vertices[j].clone().applyMatrix4(sd.matrixWorld);
                             for(var k = 0; k < 6; k++) {
                                 var thisVert = wVert.clone().multiplyScalar(k/5).add(uVert.clone().multiplyScalar(1 - k/5));
-                                var explosion = create_explosion(thisVert, collide_vel, 75, 200, 200);
+                                var explosion = create_explosion(thisVert, collide_vel, 100, 100, 200);
                                 explosions.push(explosion);
                             }
                         }
                     }
-                    // TODO: fill in StarDestroyer explosion
                     scene.remove(sd);
                     sd_boid = undefined;
                     sd = undefined;
@@ -323,7 +324,6 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
             else {
                 boids[collision_i].hp -= 1;
                 bullet.getOwner().enemiesKilled += 1;
-                console.log(bullet.getOwner().enemiesKilled);
                 // boid is killed, update necessary data structures
                 if (boids[collision_i].hp == 0) {
                     var collide_pos = bullet.position.clone();
@@ -334,13 +334,13 @@ function update_bullets(bullets, bullet_meshs, boids, birds) {
                         document.getElementById('tiecount').innerHTML = "" + (boids.length - 1);
                     }
                     removeBoidBird(collision_i, boids, birds);
-                    console.log('count: ' + boids.length);
+                    // console.log('count: ' + boids.length);
                     var explosion = create_explosion(collide_pos, collide_vel);
                     explosions.push(explosion);
                 }              
             }
         }
-        if (bullet.remove_this) {
+        if (bullet.remove_this || bullet.getOwner() === undefined) {
             scene.remove(bullet_mesh);
             bullets.splice(i, 1);
             bullet_meshs.splice(i, 1)
@@ -373,12 +373,14 @@ function create_explosion(init_pos, init_vel, max_distance=75, numparticles=75, 
 // Update the location particles by calling the run function for each explosion boid.
 // Each explosion boid consists of multiple explosion particles, each of which must be updated.
 function update_explosions(explosions) {
+    var min_size = 0.3;
     for (var i = 0, il = explosions.length; i < il; i++) {
         var explosion = explosions[i];
         explosion.run();
         if (explosion.remove_this) {
             for(var j = 0; j < explosion.meshes.length; j++) {
-                scene.remove(explosion.meshes[j]);
+                if (mesh !== undefined && mesh.scale.length() > min_size)
+                    scene.remove(explosion.meshes[j]);
             }
             explosions.splice(i, 1);
             i--; il--;
@@ -388,9 +390,13 @@ function update_explosions(explosions) {
             var mesh = explosion.meshes[j];
             var pos = explosion.positions[j];
             mesh.position.copy(pos);
-            mesh.scale.x *= 0.97;
-            mesh.scale.y *= 0.97;
-            mesh.scale.z *= 0.97;
+            if (mesh !== undefined && mesh.scale.length() > min_size){
+                mesh.scale.x *= 0.9 + Math.random()/11;
+                mesh.scale.y *= 0.9 + Math.random()/11;
+                mesh.scale.z *= 0.9 + Math.random()/11;
+            } else if (mesh !== undefined) {
+                scene.remove(mesh);
+            }
         }
     }
 }
@@ -522,7 +528,7 @@ function enter_dead_state() {
     }
     in_dead_state = true;
     var waitTime = Date.now() - dead_time;
-    var waitLimit = 500;
+    var waitLimit = 600;
     if (waitTime > waitLimit) {
         dead_time = undefined;
         in_dead_state = false;
@@ -634,7 +640,7 @@ function init() {
         window.addEventListener('contextmenu', onRightClick, false);
         window.addEventListener('keydown', onKeyDown, true);
         window.addEventListener('keyup', onKeyUp, true);
-        console.log('hi0');
+        // console.log('hi0');
         initializeGame();
     });
 
@@ -669,7 +675,7 @@ function initSplashScreen() {
     div1.appendChild(titletext);
     
     var btn = document.createElement('button');
-    btn.innerHTML = 'Begin';
+    btn.innerHTML = 'Launch Game';
     btn.id = "beginButton";
     div1.appendChild(btn);
 
@@ -686,7 +692,7 @@ function initializeGame() {
     if (sd_boid !== undefined)
         sd_boid.active = true; 
     last_spawn_time = Date.now();
-    console.log("hello");
+    // console.log("hello");
     document.getElementById("xwingdiv").style.visibility = "visible";
     document.getElementById("tiediv").style.visibility = "visible";
     document.getElementById("titlediv").style.visibility = "hidden";
@@ -706,9 +712,9 @@ function concludeGame(winner) {
     } else if (winner == 'tie') {
         winText = "The Empire has won and eliminated all opposition";
     }
+    console.log(document.getElementById("killedDiv").style.visibility);
     document.getElementById("titletext").innerHTML = winText;
     document.getElementById("beginButton").innerHTML = "Restart";
-
     document.getElementById("beginButton").addEventListener("click", function() {
         // boids_xwing = [];
         // boids_tie = [];
@@ -820,10 +826,26 @@ function initText() {
     count4.id = "StarDestroyerHP";
     div4.appendChild(count4);
 
+    var div5 = document.createElement('div');
+    div5.style.position = 'absolute';
+    div5.style.width = window.innerWidth - 10;
+    div5.style.height = 100;
+    div5.style.backgroundColor = "transparent";
+    div5.style.color = "white";
+    div5.innerHTML = "R to select an X-wing.    W to fly X-wing.   SPACE to shoot X-wing.  Q to leave X-wing.\nWin by eliminating all TIEs.";
+    div5.style.top = (window.innerHeight - Math.max(window.innerHeight/5, 150)) + 'px';
+    div5.style.left = 200 + 'px';
+    div5.id = "instructionsDiv";
+    div5.style.visibility = "visible";
+    var count5 = document.createElement('p');
+    count5.id = "instructionId";
+    div5.appendChild(count5);
+
     document.body.appendChild(div1);
     document.body.appendChild(div2);
     document.body.appendChild(div3);
     document.body.appendChild(div4);
+    document.body.appendChild(div5);
 }
 
 
@@ -847,6 +869,7 @@ function render() {
     }
 
     if (!conclude) {
+        // console.log('render');
         // First update star destroyer, so geometry is consistent
         if (sd_boid !== undefined) {
             update_boid_mesh(sd_boid, sd);
@@ -869,7 +892,7 @@ function render() {
         update_bullets(bullets_sd, bullet_meshs_sd, boids_xwing, birds_xwing);
 
         update_explosions(explosions);
-        if (selectBoid != undefined) {
+        if (selectBoid != undefined && !conclude) {
             document.getElementById("killedDiv").style.visibility = "visible";
             document.getElementById("killedcount").innerHTML = selectBoid.enemiesKilled;
         } else {
@@ -921,8 +944,6 @@ function onWindowResize() {
 }
 
 function copyCamera(src, dst) {
-    console.log('src', src);
-    console.log('dst', dst);
     dst.matrix.copy(src.matrix.clone());
     dst.matrixWorld.copy(src.matrixWorld.clone());
     dst.matrixWorldInverse.copy(src.matrixWorldInverse.clone());
@@ -937,8 +958,6 @@ function copyCamera(src, dst) {
     dst.modelViewMatrix.copy(src.modelViewMatrix.clone());
     dst.normalMatrix.copy(src.normalMatrix.clone());
     dst.updateProjectionMatrix();
-    console.log('after copy src', src);
-    console.log('after copy dst', dst);
 }
 
 function onKeyDown( event ) {
@@ -1016,7 +1035,6 @@ function onLeftClick(e) {
 
         // calculate objects intersecting the picking ray
         var intersects = raycaster.intersectObjects( birds_xwing );
-        console.log(intersects.length);
         for ( var i = 0; i < intersects.length; i++ ) {
             if (intersects[i].distance < min_dist){
                 min_dist = intersects[i].distance;

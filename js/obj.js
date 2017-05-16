@@ -445,7 +445,7 @@ var Boid = function() {
 
 var Bullet = function(init_position, init_velocity, owner) {
     var _width = 500, _height = 500, _depth = 200, _collision_distance = 8;
-    var _max_distance = 500;
+    this._max_distance = 500;
     var _distance_travelled = 0;
     var _owner = owner;
     this.remove_this = false;
@@ -466,8 +466,12 @@ var Bullet = function(init_position, init_velocity, owner) {
         _distance_travelled += _distance_unit;  
     };
 
+    this.setMaxDistance = function(value) {
+        this._max_distance = value;
+    }
+
     this.run = function(boids, sd_boid = undefined) {
-        if (_distance_travelled > _max_distance || this.checkBounds()) {
+        if (_distance_travelled > this._max_distance || this.checkBounds()) {
             this.remove_this = true;
             _owner.fired = false;
             return undefined;
@@ -478,7 +482,7 @@ var Bullet = function(init_position, init_velocity, owner) {
                 distance = boid.position.distanceTo( this.position );
                 if (distance <= _collision_distance && boid != _owner) {
                     // console.log(distance);
-                    console.log('collision!');
+                    console.log('bullet collision!');
                     this.remove_this = true;
                     _owner.fired = false;
                     return i;
@@ -541,6 +545,7 @@ var Explosion = function(init_position, num_particles, init_vel) {
     var _width = 800, _height = 400, _depth = 1000, _collision_distance = 5;
     var _max_distance = 75;
     var _distance_travelled = 0;
+    var scope = this;
     this.remove_this = false;
 
     this.positions = new Array(num_particles);
@@ -628,7 +633,8 @@ var Explosion = function(init_position, num_particles, init_vel) {
     this.move = function () {
         for(var i = 0; i < this.positions.length; i++) {
             this.positions[i].add(this.velocities[i]);
-            this.velocities[i].multiplyScalar(0.95);
+            this.velocities[i].multiplyScalar(0.99);
+            
             // console.log('moving');
             // console.log(this.positions[i]);
         }
@@ -686,7 +692,7 @@ var StarDestroyerBoid = function () {
     this.triangles = [];
     this.effective_distance = 10;
 
-    this.hp = 100;
+    this.hp = 80;
 
     this.position = new THREE.Vector3();
     this.velocity = new THREE.Vector3();
@@ -698,7 +704,7 @@ var StarDestroyerBoid = function () {
     var vector = new THREE.Vector3();
     var _acceleration = new THREE.Vector3();
     var _avoidWalls = true;
-    var _avoid_accel_scaling = 2.5 * _maxSpeed;
+    var _avoid_accel_scaling = 10 * _maxSpeed;
 
     var _face;
     var _triangle;
@@ -706,17 +712,18 @@ var StarDestroyerBoid = function () {
 
     var _width, _height, _depth;
 
-    var radians, cos_radians, sin_radians, max_turn_angle = 2;
+    var radians, cos_radians, sin_radians, max_turn_angle = 1;
     radians = max_turn_angle*Math.PI/180;
     cos_radians = Math.cos(radians);
     sin_radians = Math.sin(radians);
 
     _lastFireTime = 0;
     _lastBurstTime = 0;
-    _time_between_fires = 100;
+    _time_between_fires = 80;
     _time_between_bursts = 3000;
     _burst_count = 0;
     _burst_limit = 10;
+    var _bullet_max_distance = 1000;
 
     this.setWorldSize = function ( width, height, depth ) {
         _width = width;
@@ -732,6 +739,7 @@ var StarDestroyerBoid = function () {
                 bullet = new Bullet(turret.position.clone(), fireVelocity.clone(), this);
                 console.log('FORCE FIRING BULLET');
                 bullet.setWorldSize(_width, _height, _depth);
+                bullet.setMaxDistance(_bullet_max_distance);
                 _lastFireTime = now;
                 _burst_count += 1;
                 if (_burst_count == _burst_limit) {
@@ -785,7 +793,7 @@ var StarDestroyerBoid = function () {
         var steer = new THREE.Vector3();
         steer.copy( this.position );
         steer.sub( target );
-        if (steer.length() < target.length()/3) {
+        if (steer.length() > target.length()/3) {
             return steer.set(0,0,0);
         }
         steer.multiplyScalar( 1 / this.position.distanceToSquared( target ) );
@@ -821,7 +829,6 @@ var StarDestroyerBoid = function () {
         if (dot < cos_radians) {
             var axis = old_velocity.clone().cross(this.velocity);
             this.velocity = rotate(old_velocity, axis);
-            console.log(Math.acos(this.velocity.dot(old_velocity)));
             _acceleration.add(this.velocity);
         } else {
             _acceleration.set( 0, 0, 0 );

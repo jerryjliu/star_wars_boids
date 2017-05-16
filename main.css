@@ -20,5 +20,10 @@ html {
     outline:none;
     color: white;
     font-size:20px;
+    letter-spacing: 2px;
     font-family: MyWebFont;
+}
+
+div {
+    letter-spacing: 2px;
 }
