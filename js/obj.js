@@ -660,6 +660,8 @@ var StarDestroyerBoid = function () {
     this.position = new THREE.Vector3();
     this.velocity = new THREE.Vector3();
 
+    this.active = false;
+
     var _maxSpeed = 1;
 
     var vector = new THREE.Vector3();
@@ -678,10 +680,44 @@ var StarDestroyerBoid = function () {
     cos_radians = Math.cos(radians);
     sin_radians = Math.sin(radians);
 
+    _lastFireTime = 0;
+    _lastBurstTime = 0;
+    _time_between_fires = 200;
+    _time_between_bursts = 3500;
+    _burst_count = 0;
+    _burst_limit = 5;
+
     this.setWorldSize = function ( width, height, depth ) {
         _width = width;
         _height = height;
         _depth = depth;
+    };
+
+    this.forceFireBullet = function (turret, fireVelocity) {
+        if (!this.active) return undefined;
+        var now = Date.now();
+        if (_burst_count < _burst_limit) {
+            if (now - _lastFireTime > _time_between_fires) {
+                bullet = new Bullet(turret.position.clone(), fireVelocity.clone(), this);
+                console.log('FORCE FIRING BULLET');
+                bullet.setWorldSize(_width, _height, _depth);
+                _lastFireTime = now;
+                _burst_count += 1;
+                if (_burst_count == _burst_limit) {
+                    _lastBurstTime = now;
+                }
+                return bullet;
+            }
+            else {
+                return undefined;
+            }
+        } else {
+            if (now - _lastBurstTime > _time_between_bursts) {
+                _burst_count = 0;
+                _lastBurstTime = now;
+            }
+        }
+        return undefined;
     };
 
     this.run = function() {

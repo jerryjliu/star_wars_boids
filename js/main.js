@@ -48,6 +48,9 @@ var firstPersonCamera;
 // Star Destroyer
 var sd;
 var sd_boid;
+var turret;
+var turret_loc_pos;
+var bullets_sd, bullet_meshs_sd;
 
 // game has concluded
 var conclude = false;
@@ -140,8 +143,14 @@ function init_star_destroyer() {
     sd_boid.velocity.set(Math.random() + 2, (Math.random()-0.5)*0.2, (Math.random()-0.5)*0.2);
     sd_boid.updateGeoWithMesh(sd);
     // console.log(sd);
+
+    var turretgeo = new THREE.SphereGeometry(10, 32, 32);
+    turret = new THREE.Mesh(turretgeo, new THREE.MeshBasicMaterial( { color: 0x808080, side: THREE.DoubleSide } ));
+    turret_loc_pos = new THREE.Vector4(0, 25, 0, 1);
+    scene.add(turret);
 }
 
+// only called for star destroyer
 function update_boid_mesh(boid, mesh) {
     boid.run();
     mesh.rotation.y = Math.atan2( - boid.velocity.z, boid.velocity.x );
@@ -149,6 +158,40 @@ function update_boid_mesh(boid, mesh) {
     mesh.position.copy(boid.position);
     color = mesh.material.color;
     color.r = color.g = color.b = Math.max((camera.position.clone().sub(mesh.position)).length() / diagonal, 0.35);
+
+    
+
+}
+
+function update_turret(sd_boid, sd, turret, turret_loc_pos) {
+    // update turret 
+    sd.updateMatrixWorld();
+    // turret.position = turret_loc_pos.clone().applyMatrix4(sd.matrixWorld);
+    var tmp4 = turret_loc_pos.clone().applyMatrix4(sd.matrixWorld);
+    turret.position.x = tmp4.x;
+    turret.position.y = tmp4.y;
+    turret.position.z = tmp4.z;
+
+    turret.rotation = sd.rotation;
+
+    // fire in average direction of xwings
+    var avgPosition = new THREE.Vector3();
+    for(var i = 0; i < boids_xwing.length; i++) {
+        avgPosition.add(boids_xwing[i].position);
+    }
+    // var randIndex = Math.floor(Math.random() * boids_xwing.length);
+    // var randPosition = boids_xwing[randIndex].position.clone();
+    // randPosition.divideScalar(boids_xwing.length);
+    var fireVelocity = avgPosition.clone().sub(turret.position).normalize();
+    // make sure it doesn't intersect with the ship itself
+    var raycaster = new THREE.Raycaster(turret.position, fireVelocity);
+    var intersections = raycaster.intersectObject(sd, false);
+    if (intersections != null && intersections.length > 0) {
+    } else {
+        // console.log("HELLOOOOOOO");
+        // console.log(sd_boid);
+        init_bullet_obj_sd(sd_boid, turret, fireVelocity, bullets_sd, bullet_meshs_sd, bullet_tie_color);
+    }
 }
 
 // Update the locations of the boids and corresponding birds (meshs) by calling
@@ -308,6 +351,20 @@ function init_bullet_obj(owner, bullet_arr, bullet_mesh_arr, color, force_fire=f
     }
 }
 
+function init_bullet_obj_sd(sd_boid, turret, fireVelocity, bullet_arr, bullet_mesh_arr, color) {
+    bullet = sd_boid.forceFireBullet(turret, fireVelocity);
+    if (bullet !== undefined) {
+        bullet_arr.push(bullet);
+        var geometry = new THREE.BoxGeometry( 4, 4, 4 );
+        var material = new THREE.MeshBasicMaterial( { color: color } );
+        bullet_mesh = new THREE.Mesh( geometry, material );
+        bullet_mesh.position.copy(bullet.position);
+        scene.add( bullet_mesh );
+        bullet_mesh_arr.push(bullet_mesh);
+    }
+}
+
+
 // Called in the constructor to add grid boundaries to the current scene.
 function add_boundaries(scene) {
     // Bottom and top grid
@@ -429,6 +486,9 @@ function init() {
     bullets_tie = [];
     bullet_meshs_tie = [];
 
+    bullets_sd = [];
+    bullet_meshs_sd = [];
+
     explosions = [];
 
     init_boids_birds(boids_xwing, birds_xwing, true);
@@ -488,7 +548,7 @@ function initSplashScreen() {
 
     var titletext = document.createElement('p');
     titletext.id = 'titletext';
-    titletext.innerHTML = 'Star Wars: An Old Beginning';
+    titletext.innerHTML = 'Star Wars: Attack of the Boids';
     div1.appendChild(titletext);
     
     var btn = document.createElement('button');
@@ -506,6 +566,8 @@ function initializeGame() {
     for(var i = 0; i < boids_tie.length; i++) {
         boids_tie[i].active = true;
     }
+    sd_boid.active = true; 
+
     console.log("hello");
     document.getElementById("xwingdiv").style.visibility = "visible";
     document.getElementById("tiediv").style.visibility = "visible";
@@ -632,6 +694,7 @@ function render() {
     if (!conclude) {
         // First update star destroyer, so geometry is consistent
         update_boid_mesh(sd_boid, sd);
+        update_turret(sd_boid, sd, turret, turret_loc_pos);
         sd_boid.updateGeoWithMesh(sd);
 
         if (boids_xwing.length == 0) {
@@ -645,6 +708,7 @@ function render() {
 
         update_bullets(bullets_xwing, bullet_meshs_xwing, boids_tie, birds_tie);
         update_bullets(bullets_tie, bullet_meshs_tie, boids_xwing, birds_xwing);
+        update_bullets(bullets_sd, bullet_meshs_sd, boids_xwing, birds_xwing);
 
         update_explosions(explosions);
         if (selectBoid != undefined) {
