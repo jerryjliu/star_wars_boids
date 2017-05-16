@@ -421,7 +421,7 @@ var Boid = function() {
         if ( l > _maxSteerForce ) {
             steer.divideScalar( l / _maxSteerForce );
         }
-        steer.divideScalar(5);
+        steer.divideScalar(3);
         return steer;
     };
     this.separation = function ( boids ) {
