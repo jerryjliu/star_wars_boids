@@ -561,6 +561,7 @@ function spawn_more_ties(count) {
         boid.setWorldSize( scene_width_half, scene_height_half, scene_depth_half );
         boid.setMaxSpeed(init_vel);
         boid.setAvoidStarDestroyer( true );
+        boid.active = true;
 
         var material = new THREE.MeshPhongMaterial( {color: 0x808080, side: THREE.DoubleSide });
         material.map  = THREE.ImageUtils.loadTexture('../images/tie2.png');
